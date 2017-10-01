@@ -1,0 +1,6 @@
+compilador.tab.*
+compilador.output
+compilador
+lex.yy.c
+MEPA
+*.tar.bz2
