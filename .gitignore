@@ -1,6 +1,8 @@
 compilador.tab.*
-compilador.output
-compilador
+simulaMepa.tab.*
 lex.yy.c
+*.output
+*.o
+compilador
 MEPA
 *.tar.bz2
