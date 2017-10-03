@@ -1803,7 +1803,7 @@ char* msg_help = "uso: simulaMepa [-d -p -h -iArqIn -oArqOut]\n"
                  "    -d => debug\n"
                  "    -p => pretty printer\n"
                  "    -h => help\n"
-//               "    -oARQ => arquivo de saÌda\n"
+//               "    -oARQ => arquivo de sa√≠da\n"
                  "    -iARQ => arquivo de entrada (default=MEPA)\n";
 parser_opcoes(int argc, char **argv) 
 {
@@ -1813,7 +1813,7 @@ parser_opcoes(int argc, char **argv)
  *   -d => debug
  *   -p => pretty printer
  *   -iARQ => arquivo de entrada
- *   -oARQ => arquivo de saÌda
+ *   -oARQ => arquivo de sa√≠da
  *   -h => help
  * ------------------------------------------------------------------- */
 
@@ -1851,8 +1851,8 @@ parser_opcoes(int argc, char **argv)
         abort ();
       }
 
-  // Se n„o disse o nome do arquivo de entrada, 
-  // ent„o a entrada È o arquivo "MEPA"
+  // Se n√£o disse o nome do arquivo de entrada, 
+  // ent√£o a entrada √© o arquivo "MEPA"
   if (strlen(arq_in)==0)
     strcpy (arq_in, "MEPA");
 }
@@ -1868,24 +1868,24 @@ main (int argc, char** argv) {
    printf("Arquivo de entrada: %s", arq_in);
    fp=fopen (arq_in, "r");
    if (fp == NULL) {
-     printf("Arquivo %s n„o encontrado\n", arq_in);
+     printf("Arquivo %s n√£o encontrado\n", arq_in);
       return(-1);
    }
   yyin=fp;
 
-  // IniciaÁıes de vari·veis globais
+  // Inicia√ß√µes de vari√°veis globais
   iniciaTabInstr();
   strcpy(rotulo,"");
 
-  // faz a an·lise sint·tica e gera os comandos no formato indicado
+  // faz a an√°lise sint√°tica e gera os comandos no formato indicado
   // pela "instStruct".
   yyparse();
 
-  // Coloca o n˙mero da linha no comandos com rÛtulos, verifica por
+  // Coloca o n√∫mero da linha no comandos com r√≥tulos, verifica por
   // duplicidades, etc.
   ajustaRotulos();
 
-  // Imprime (pretty printer) do cÛdigo MEPA.
+  // Imprime (pretty printer) do c√≥digo MEPA.
   if (arg_impr)
     imprimeProg();
 

@@ -3,17 +3,17 @@
 * *******************************************************
 * Interpretador MEPA
 * Autor: Bruno Muller Junior (Nov/2015)
-* Licença: GNU GPL
+* LicenÃ§a: GNU GPL
 * *******************************************************
 
-Para gerar o executável:
+Para gerar o executÃ¡vel:
 > make
 
 -----------------
 Para executar o arquivo "MEPA"
 > ./simulaMepa 
 Arquivo de entrada: MEPA
-Iniciando Execução
+Iniciando ExecuÃ§Ã£o
 1
 1
 0
@@ -24,20 +24,20 @@ Iniciando Execução
 2
 3
 2
-Execução concluída com sucesso
+ExecuÃ§Ã£o concluÃ­da com sucesso
 > 
 
 -----------------
 Para executar o arquivo "MEPA-5"
 > ./simulaMepa -iMEPA-5
 Arquivo de entrada: MEPA-5
-Iniciando Execução
-Digite um número: 3
+Iniciando ExecuÃ§Ã£o
+Digite um nÃºmero: 3
 3
 2
-Execução concluída com sucesso
+ExecuÃ§Ã£o concluÃ­da com sucesso
 
 -----------------
-Para ver opções de simulação
+Para ver opÃ§Ãµes de simulaÃ§Ã£o
 > ./simulaMepa -h
 

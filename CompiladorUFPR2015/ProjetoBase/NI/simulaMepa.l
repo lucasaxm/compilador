@@ -6,7 +6,7 @@
  *      Atualizado em: [17/11/2015, 10h:45m]
  *
  * -------------------------------------------------------------------
- *   Analisador léxico: Reconhecedor dos tokens descritos em 
+ *   Analisador lÃ©xico: Reconhecedor dos tokens descritos em 
  *   simulaMepa.y
  * ------------------------------------------------------------------- */
 

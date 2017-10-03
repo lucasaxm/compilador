@@ -6,8 +6,8 @@
  *      Atualizado em: [17/11/2015, 10h:57m]
  *
  * -------------------------------------------------------------------
- *   Analisador sint·tico da MEPA.
- *   A regra b·sica È: 
+ *   Analisador sint√°tico da MEPA.
+ *   A regra b√°sica √©: 
  *   RXX: XXXX [P1 [P2 [P3]]] 
  * ------------------------------------------------------------------- */
 
@@ -20,14 +20,14 @@
 
 %}
 
-// sÌmbolos 
+// s√≠mbolos 
 %token DOIS_PONTOS ROTULO INTEIRO VIRGULA
-// instruÁıes com nenhum par‚metro
+// instru√ß√µes com nenhum par√¢metro
 %token INPP PARA SOMA SUBT MULT DIVI INVR CONJ DISJ NEGA 
 %token CMME CMMA CMIG CMDG CMEG CMAG NADA LEIT IMPR 
-// instruÁıes com um par‚metro
+// instru√ß√µes com um par√¢metro
 %token CRCT AMEM DMEM ENPR ENRT DSVS DSVF 
-// instruÁıes com dois par‚metros
+// instru√ß√µes com dois par√¢metros
 %token CRVL ARMZ CRVI ARMI CREN CHPR RTPR DSVR
 
 %%
@@ -48,19 +48,19 @@ linha: rot
        }
 ;
 
-// A regra abaixo coloca na vari·vel global "rotulo" o string
-// correspondente ao rÛtulo-alvo (o que fica ‡ esquerda do comando) 
+// A regra abaixo coloca na vari√°vel global "rotulo" o string
+// correspondente ao r√≥tulo-alvo (o que fica √† esquerda do comando) 
 rot : ROTULO DOIS_PONTOS 
     | %empty
 ;
 
-// Para n„o exigir a presenÁa da vÌrgula
+// Para n√£o exigir a presen√ßa da v√≠rgula
 virgula : VIRGULA 
         | %empty
 ;
 
 comando : 
-// Comandos com nenhum par‚metro
+// Comandos com nenhum par√¢metro
   INPP { insereInstr (rotuloAlvo, inpp, 0, 0, 0, 0, NULL); };
 | PARA { insereInstr (rotuloAlvo, para, 0, 0, 0, 0, NULL); };
 | SOMA { insereInstr (rotuloAlvo, soma, 0, 0, 0, 0, NULL); };
@@ -81,7 +81,7 @@ comando :
 | LEIT { insereInstr (rotuloAlvo, leit, 0, 0, 0, 0, NULL); };
 | IMPR { insereInstr (rotuloAlvo, impr, 0, 0, 0, 0, NULL); };
 
-// Comandos com um par‚metro
+// Comandos com um par√¢metro
 | CRCT INTEIRO {insereInstr (rotuloAlvo, crct, inteiro, 0, 0, 0, NULL); };
 | AMEM INTEIRO {insereInstr (rotuloAlvo, amem, inteiro, 0, 0, 0, NULL); };
 | DMEM INTEIRO {insereInstr (rotuloAlvo, dmem, inteiro, 0, 0, 0, NULL); };
@@ -89,7 +89,7 @@ comando :
 | DSVS ROTULO  {insereInstr (rotuloAlvo, dsvs, 0, 0, 0, 0, rotulo); };
 | DSVF ROTULO  {insereInstr (rotuloAlvo, dsvf, 0, 0, 0, 0, rotulo); };
 
-// Comandos com dois par‚metros inteiros
+// Comandos com dois par√¢metros inteiros
 | CRVL INTEIRO { param1_int = inteiro;} virgula
        INTEIRO {insereInstr (rotuloAlvo, crvl, param1_int, inteiro, 0, 0, NULL); };
 | ARMZ INTEIRO { param1_int = inteiro;} virgula
@@ -103,7 +103,7 @@ comando :
 | ENRT INTEIRO { param1_int = inteiro;} virgula
        INTEIRO {insereInstr (rotuloAlvo, enrt, param1_int, inteiro, 0, 0, NULL); };
 
-// Comandos da parte b·sica da MEPA
+// Comandos da parte b√°sica da MEPA
 | CHPR ROTULO virgula INTEIRO 
   {insereInstr (rotuloAlvo, chpr, inteiro, 0, 0, 0, rotulo); };
 | RTPR INTEIRO { param1_int = inteiro;} virgula
@@ -123,7 +123,7 @@ char* msg_help = "uso: simulaMepa [-d -p -h -iArqIn -oArqOut]\n"
                  "    -d => debug\n"
                  "    -p => pretty printer\n"
                  "    -h => help\n"
-//               "    -oARQ => arquivo de saÌda\n"
+//               "    -oARQ => arquivo de sa√≠da\n"
                  "    -iARQ => arquivo de entrada (default=MEPA)\n";
 parser_opcoes(int argc, char **argv) 
 {
@@ -133,7 +133,7 @@ parser_opcoes(int argc, char **argv)
  *   -d => debug
  *   -p => pretty printer
  *   -iARQ => arquivo de entrada
- *   -oARQ => arquivo de saÌda
+ *   -oARQ => arquivo de sa√≠da
  *   -h => help
  * ------------------------------------------------------------------- */
 
@@ -171,8 +171,8 @@ parser_opcoes(int argc, char **argv)
         abort ();
       }
 
-  // Se n„o disse o nome do arquivo de entrada, 
-  // ent„o a entrada È o arquivo "MEPA"
+  // Se n√£o disse o nome do arquivo de entrada, 
+  // ent√£o a entrada √© o arquivo "MEPA"
   if (strlen(arq_in)==0)
     strcpy (arq_in, "MEPA");
 }
@@ -188,24 +188,24 @@ main (int argc, char** argv) {
    printf("Arquivo de entrada: %s", arq_in);
    fp=fopen (arq_in, "r");
    if (fp == NULL) {
-     printf("Arquivo %s n„o encontrado\n", arq_in);
+     printf("Arquivo %s n√£o encontrado\n", arq_in);
       return(-1);
    }
   yyin=fp;
 
-  // IniciaÁıes de vari·veis globais
+  // Inicia√ß√µes de vari√°veis globais
   iniciaTabInstr();
   strcpy(rotulo,"");
 
-  // faz a an·lise sint·tica e gera os comandos no formato indicado
+  // faz a an√°lise sint√°tica e gera os comandos no formato indicado
   // pela "instStruct".
   yyparse();
 
-  // Coloca o n˙mero da linha no comandos com rÛtulos, verifica por
+  // Coloca o n√∫mero da linha no comandos com r√≥tulos, verifica por
   // duplicidades, etc.
   ajustaRotulos();
 
-  // Imprime (pretty printer) do cÛdigo MEPA.
+  // Imprime (pretty printer) do c√≥digo MEPA.
   if (arg_impr)
     imprimeProg();
 

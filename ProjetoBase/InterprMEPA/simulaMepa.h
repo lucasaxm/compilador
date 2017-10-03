@@ -7,7 +7,7 @@
  *
  * -------------------------------------------------------------------
  *
- * Tipos, protÛtipos e vai·veis globais do simulador
+ * Tipos, prot√≥tipos e vai√°veis globais do simulador
  *
  * ------------------------------------------------------------------- */
 
@@ -38,7 +38,7 @@ extern char param1_rot[TAM_TOKEN];
 extern int inteiro;
 
 /* -------------------------------------------------------------------
- * OpÁıes da linha de comando
+ * Op√ß√µes da linha de comando
  * ------------------------------------------------------------------- */
 
 extern int arg_debug;
@@ -48,21 +48,21 @@ extern char arq_out[10];
 
 
 /* -------------------------------------------------------------------
- * Os comandos MEPA do arquivo de entrada s„o mapeados para a 
- * estrutura de execuÁ„o abaixo. Cada instruÁ„o MEPA È uma linha 
+ * Os comandos MEPA do arquivo de entrada s√£o mapeados para a 
+ * estrutura de execu√ß√£o abaixo. Cada instru√ß√£o MEPA √© uma linha 
  * em INST
  * ------------------------------------------------------------------- */
 
 typedef struct instStruct {
-  char* rotulo; // rÛtulo associado a esta linha (se n„o houver, NULL)
-  instrucao inst;  // cÛdigo de operaÁ„o
+  char* rotulo; // r√≥tulo associado a esta linha (se n√£o houver, NULL)
+  instrucao inst;  // c√≥digo de opera√ß√£o
   int op1;         // operando 1 
-  char rotOp1[10]; // se oper1 for um rÛtulo, contÈm o string associado.
+  char rotOp1[10]; // se oper1 for um r√≥tulo, cont√©m o string associado.
   int op2;         // operando 2
   int op3;         // operando 3
   int op4;         // operando 4
-  char* desvio;   // o rÛtulo para onde desviar por exemplo dsvs
-  int endDesvio;  // endereÁo do rÛtulo "desvio"
+  char* desvio;   // o r√≥tulo para onde desviar por exemplo dsvs
+  int endDesvio;  // endere√ßo do r√≥tulo "desvio"
 } instStruct;
 
 #define MAX_INSTR 4096

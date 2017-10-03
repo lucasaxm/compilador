@@ -8,7 +8,7 @@
  *
  * -------------------------------------------------------------------
  *
- * FunÁıes auxiliares do simulador
+ * Fun√ß√µes auxiliares do simulador
  *
  * ------------------------------------------------------------------- */
 
@@ -27,8 +27,8 @@ instStruct instr[MAX_INSTR];
 
 int num_linha=0;
 
-// RÛtulo Alvo È o que fica ‡ esquerda do comando enquanto que o
-// rÛtuloDesvio fica ‡ direita do comando.
+// R√≥tulo Alvo √© o que fica √† esquerda do comando enquanto que o
+// r√≥tuloDesvio fica √† direita do comando.
 char rotulo[TAM_TOKEN];
 char rotuloAlvo[TAM_TOKEN];
 char rotuloDesvio[TAM_TOKEN];
@@ -40,7 +40,7 @@ char param1_rot[TAM_TOKEN];
 int inteiro;
 
 /* -------------------------------------------------------------------
- * OpÁıes da linha de comando
+ * Op√ß√µes da linha de comando
  * ------------------------------------------------------------------- */
 
 int arg_debug=0;
@@ -124,9 +124,9 @@ void insereInstr ( char* rot, instrucao inst,
  * -------------------------------------------------------------------  */
 
 void imprimeInstr(instStruct *instr) {
-    // impress„o de acordo com o n˙mero de par‚metros da instruÁ„o
+    // impress√£o de acordo com o n√∫mero de par√¢metros da instru√ß√£o
     switch (instr->inst) {
-      // Sem Par‚metros --------------------------------------  
+      // Sem Par√¢metros --------------------------------------  
     case inpp:
     case para:
     case soma:
@@ -148,9 +148,9 @@ void imprimeInstr(instStruct *instr) {
     case impr:
      printf("%s",
             tabInstr[instr->inst]);
-      // 1 Par‚metro    --------------------------------------
-      // 2 Par‚metros   --------------------------------------
-      // 3 Par‚metros   --------------------------------------
+      // 1 Par√¢metro    --------------------------------------
+      // 2 Par√¢metros   --------------------------------------
+      // 3 Par√¢metros   --------------------------------------
      break;
     case crct:
     case amem:
@@ -200,9 +200,9 @@ void imprimeInstr(instStruct *instr) {
 imprimeProg(){
   int i;
   for (i=0; i<num_linha; i++) {
-    // CabeÁalho: numero da linha
+    // Cabe√ßalho: numero da linha
     printf("\n[%03d]: ", i);
-    // CabeÁalho: rotulo (ou brancos)
+    // Cabe√ßalho: rotulo (ou brancos)
     if (instr[i].rotulo == NULL) {
       printf("    ");
     } else {
@@ -214,23 +214,23 @@ imprimeProg(){
 }
 
 /* -------------------------------------------------------------------
- *  LÍ estrutura MEPA (instStruct) e substitui os rÛtulos (lado direito)
- *  pelos endereÁos onde o rÛtulo foi definido
+ *  L√™ estrutura MEPA (instStruct) e substitui os r√≥tulos (lado direito)
+ *  pelos endere√ßos onde o r√≥tulo foi definido
  * ------------------------------------------------------------------- */
 
 
-// tabelaRotulos armazena os rÛtulos existentes na MEPA.
+// tabelaRotulos armazena os r√≥tulos existentes na MEPA.
 typedef struct tabelaRotulos {
-  char *rot;         // O nome do rÛtulo
-  int  *endereco;   // locais onde È encontrado ([0] indica onde foi
+  char *rot;         // O nome do r√≥tulo
+  int  *endereco;   // locais onde √© encontrado ([0] indica onde foi
                      // definido
 } tabelaRotulos;
 #define MAX_ROT 100
 int tot_rot=0;
 tabelaRotulos *TR;
 
-// busca pelo rÛtulo solicitado. Retorna a linha se existe e -1 caso
-// contr·rio.
+// busca pelo r√≥tulo solicitado. Retorna a linha se existe e -1 caso
+// contr√°rio.
 int buscaRotulo (char *rot) {
   int i;
   for (i=0; i<tot_rot; i++) {
@@ -240,13 +240,13 @@ int buscaRotulo (char *rot) {
 return (-1);
 }
 
-// "RotuloAlvo" È o rÛtulo ‡ esquerda.
+// "RotuloAlvo" √© o r√≥tulo √† esquerda.
 int insereRotuloAlvo (char* rot, int endereco) {
   int i;
 
   for (i=0; i<tot_rot; i++){
-    if (strcmp (TR[i].rot, rot) == 0) { // j· existe
-      printf("ERRO: RÛtulo %s declarado mais de uma vez\n",
+    if (strcmp (TR[i].rot, rot) == 0) { // j√° existe
+      printf("ERRO: R√≥tulo %s declarado mais de uma vez\n",
              rot);
       exit (-1);
     }
@@ -277,7 +277,7 @@ void ajustaRotulos(){
 
   // (1) percorre a tabela "instStruct". Quando houver algo em
   // "rotulo", cria uma nova entrada em tabelaRotulos, colocando o
-  // endereÁo da instruÁ„o em enderecos[0]
+  // endere√ßo da instru√ß√£o em enderecos[0]
 
   for (i=0; i<num_linha; i++) {
      if (instr[i].rotulo != NULL) {
@@ -287,14 +287,14 @@ void ajustaRotulos(){
   //  imprimeTabRotulos ();
 
   // (1) percorre a tabela "instStruct" novamente. Cada vez que
-  // encontrar um rÛtulo do lado direito, (desvio), coloca o endereÁo
-  // do rÛtulo em "endDesvio".
+  // encontrar um r√≥tulo do lado direito, (desvio), coloca o endere√ßo
+  // do r√≥tulo em "endDesvio".
 
   for (i=0; i<num_linha; i++) {
      if (instr[i].desvio != NULL) {
        j = buscaRotulo (instr[i].desvio);
        if (j < 0) {
-         printf("ERRO: RÛtulo %s n„o declarado\n",
+         printf("ERRO: R√≥tulo %s n√£o declarado\n",
                 instr[i].desvio);
          exit (-1);
        }

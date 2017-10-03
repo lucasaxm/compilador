@@ -1,8 +1,8 @@
 
-1. Para gerar o executável: "make" 
+1. Para gerar o executÃ¡vel: "make" 
 
-2. Para executar, edite um arquivo com alguma sentença válida (arquivo
-"entradaCerta"), ou inválida ("entradaErrada"). 
+2. Para executar, edite um arquivo com alguma sentenÃ§a vÃ¡lida (arquivo
+"entradaCerta"), ou invÃ¡lida ("entradaErrada"). 
 
 3. digite "posfixo < entradaCerta" ou "posfixo < entradaErrada" 
    para a entrada "a+a*a-a", gera "AAA*+A-", e 
