@@ -33,28 +33,88 @@ comentario "(*".*"*)"
 {comentario}
 
 program { simbolo  = simb_program;  
-          strncpy (token, yytext, TAM_TOKEN);
-          IMPRIME("program ");
-          return PROGRAM;
- }
+    // Regra 1
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("program ");
+    return PROGRAM;
+}
 
-var      { simbolo = simb_var;  
-          strncpy (token, yytext, TAM_TOKEN);
-          IMPRIME("var  ");
-          return VAR;
- }
+label { simbolo  = simb_label;  
+    // Regra 3
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("label ");
+    return LABEL;
+}
+
+var { simbolo = simb_var;  
+    // Regra 8
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("var  ");
+    return VAR;
+}
+
+procedure { simbolo = simb_procedure;  
+    // Regra 12
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("procedure  ");
+    return PROCEDURE;
+}
+
+function { simbolo = simb_function;  
+    // Regra 13
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("function  ");
+    return FUNCTION;
+}
 
 begin { simbolo = simb_begin;
+    // Regra 16
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME("begin ");
           return T_BEGIN;
  }
 
 end { simbolo = simb_end;
+    // Regra 16
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME("end  ");
           return T_END;
  }
+
+goto { simbolo = simb_goto;  
+    // Regra 21
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("goto  ");
+    return GOTO;
+}
+
+if { simbolo = simb_if;  
+    // Regra 22
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("if  ");
+    return IF;
+}
+
+then { simbolo = simb_then;  
+    // Regra 22
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("then  ");
+    return THEN;
+}
+
+else { simbolo = simb_else;  
+    // Regra 22
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("else  ");
+    return ELSE;
+}
+
+while { simbolo = simb_while;  
+    // Regra 23
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("while  ");
+    return WHILE;
+}
 
 := { simbolo = simb_atribuicao;  
           strncpy (token, yytext, TAM_TOKEN);
