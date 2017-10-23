@@ -26,7 +26,7 @@ void aloca_mem(){
     parametros[2] = NULL;
     // armazena valor em parametro 1
     strncpy(parametros[0], aux, sizeof(parametros[0]));
-    printf ("DEBUG | compilador.y | aloca_mem | num_vars: %d / comando: \"%s\" / parametros[0]: \"%s\"\n", num_vars, comando, parametros[0]);
+    debug_print ("num_vars=[%d] comando=[%s] parametros[0]=[%s]\n", num_vars, comando, parametros[0]);
     num_vars=0; // zera contador de variáveis
     geraCodigo (NULL, comando, parametros);
   }  
