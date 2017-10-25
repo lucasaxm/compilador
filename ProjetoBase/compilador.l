@@ -116,6 +116,18 @@ while { simbolo = simb_while;
     return WHILE;
 }
 
+integer { simbolo = simb_integer;  
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("integer  ");
+    return INT;
+}
+
+boolean { simbolo = simb_boolean;  
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("boolean  ");
+    return BOOL;
+}
+
 := { simbolo = simb_atribuicao;  
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME(" atribuicao  ");
