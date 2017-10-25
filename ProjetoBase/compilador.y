@@ -9,8 +9,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include "compilador.h"
+#include "pilha.h"
+#include "tabela.h"
 
 int num_vars;
+int nivel_lexico;
+pilha tabela_simbolos;
+tipo_simbolo *s;
 
 void aloca_mem(){
   if(num_vars>0){
@@ -37,20 +42,23 @@ void aloca_mem(){
 %token PROGRAM ABRE_PARENTESES FECHA_PARENTESES 
 %token VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO
 %token T_BEGIN T_END VAR IDENT ATRIBUICAO
-%token LABEL PROCEDURE FUNCTION GOTO IF THEN ELSE WHILE
+%token LABEL PROCEDURE FUNCTION GOTO IF THEN ELSE WHILE INT BOOL
 
 %%
 
 programa :
     {
         num_vars=0;
+        nivel_lexico=0;
+        tabela_simbolos = constroi_pilha();
         geraCodigo (NULL, "INPP", NULL); 
     }
     PROGRAM IDENT 
     ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA
     bloco PONTO
     {
-        geraCodigo (NULL, "PARA", NULL); 
+        geraCodigo (NULL, "PARA", NULL);
+        TS_imprime(tabela_simbolos);
     }
 ;
 
@@ -63,7 +71,7 @@ bloco :
 ;
 
 
-
+/* DECLARACAO DE VARS */
 
 parte_declara_vars:  var 
 ;
@@ -77,25 +85,37 @@ declara_vars: declara_vars declara_var
             | declara_var 
 ;
 
-declara_var : { } 
-              lista_id_var DOIS_PONTOS 
-              tipo 
-              { /* AMEM */
-              }
-              PONTO_E_VIRGULA
+declara_var : { }
+    lista_id_var DOIS_PONTOS 
+    tipo 
+    {
+    }
+    PONTO_E_VIRGULA
 ;
 
-tipo        : IDENT
+tipo : { }
+    BOOL
+    {
+        TS_atualiza_tipos(tboolean,tabela_simbolos);
+    }
+    | INT
+    {
+        TS_atualiza_tipos(tint,tabela_simbolos);
+    }
 ;
 
 lista_id_var:
     lista_id_var VIRGULA IDENT 
-    { /* insere última var na tabela de símbolos */ 
-        num_vars++;
+    { /* insere última var na tabela de símbolos */
+        s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
+        s->vs = TS_constroi_simbolo_vs(token, nivel_lexico, num_vars++, tunknown);
+        empilha((void *) s, tabela_simbolos);
     }
     | IDENT
     { /* insere vars na tabela de símbolos */
-        num_vars++;
+        s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
+        s->vs = TS_constroi_simbolo_vs(token, nivel_lexico, num_vars++, tunknown);
+        empilha((void *) s, tabela_simbolos);
     }
 ;
 
@@ -113,28 +133,26 @@ comandos:
 %%
 
 main (int argc, char** argv) {
-   FILE* fp;
-   extern FILE* yyin;
-
-   if (argc<2 || argc>2) {
-         printf("usage compilador <arq>a %d\n", argc);
-         return(-1);
-      }
-
-   fp=fopen (argv[1], "r");
-   if (fp == NULL) {
-      printf("usage compilador <arq>b\n");
-      return(-1);
-   }
-
-
-/* -------------------------------------------------------------------
- *  Inicia a Tabela de Símbolos
- * ------------------------------------------------------------------- */
-
-   yyin=fp;
-   yyparse();
-
-   return 0;
+    FILE* fp;
+    extern FILE* yyin;
+    
+    if (argc<2 || argc>2) {
+        printf("usage compilador <arq>a %d\n", argc);
+        return(-1);
+    }
+    
+    fp=fopen (argv[1], "r");
+    if (fp == NULL) {
+        printf("usage compilador <arq>b\n");
+        return(-1);
+    }
+    
+    
+    // Inicia a Tabela de Símbolos
+    pilha tabela_simbolos = constroi_pilha();
+    
+    yyin=fp;
+    yyparse();
+    return 0;
 }
 
