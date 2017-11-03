@@ -32,151 +32,235 @@ comentario "(*".*"*)"
 
 {comentario}
 
-program { simbolo  = simb_program;  
+program {
     // Regra 1
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME("program ");
     return PROGRAM;
 }
 
-label { simbolo  = simb_label;  
+label {
     // Regra 3
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME("label ");
     return LABEL;
 }
 
-var { simbolo = simb_var;  
+var {
     // Regra 8
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME("var  ");
     return VAR;
 }
 
-procedure { simbolo = simb_procedure;  
+procedure {
     // Regra 12
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME("procedure  ");
     return PROCEDURE;
 }
 
-function { simbolo = simb_function;  
+function {
     // Regra 13
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME("function  ");
     return FUNCTION;
 }
 
-begin { simbolo = simb_begin;
+begin {
     // Regra 16
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME("begin ");
           return T_BEGIN;
  }
 
-end { simbolo = simb_end;
+end {
     // Regra 16
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME("end  ");
           return T_END;
  }
 
-goto { simbolo = simb_goto;  
+goto {
     // Regra 21
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME("goto  ");
     return GOTO;
 }
 
-if { simbolo = simb_if;  
+if {
     // Regra 22
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME("if  ");
     return IF;
 }
 
-then { simbolo = simb_then;  
+then {
     // Regra 22
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME("then  ");
     return THEN;
 }
 
-else { simbolo = simb_else;  
+else {
     // Regra 22
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME("else  ");
     return ELSE;
 }
 
-while { simbolo = simb_while;  
+while {
     // Regra 23
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME("while  ");
     return WHILE;
 }
 
-integer { simbolo = simb_integer;  
+integer {
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME("integer  ");
     return INT;
 }
 
-boolean { simbolo = simb_boolean;  
+boolean {
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME("boolean  ");
     return BOOL;
 }
 
-:= { simbolo = simb_atribuicao;  
-          strncpy (token, yytext, TAM_TOKEN);
-          IMPRIME(" atribuicao  ");
-          return ATRIBUICAO;  
+:= {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" atribuicao  ");
+    return ATRIBUICAO;  
  }
 
-\; { simbolo = simb_ponto_e_virgula;  
-          strncpy (token, yytext, TAM_TOKEN);
-          IMPRIME(" pt_virgula  ");
-          return PONTO_E_VIRGULA;
+\; {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" pt_virgula  ");
+    return PONTO_E_VIRGULA;
  }
 
-\: { simbolo = simb_dois_pontos;  
-          strncpy (token, yytext, TAM_TOKEN);
-          IMPRIME(" dois pontos ");
-          return DOIS_PONTOS;
+\: {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" dois pontos ");
+    return DOIS_PONTOS;
  }
 
-\, { simbolo = simb_virgula;  
-          strncpy (token, yytext, TAM_TOKEN);
-          IMPRIME(" virgula  ");
-          return VIRGULA;
+\, {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" virgula  ");
+    return VIRGULA;
  }
 
 
-\. { simbolo = simb_ponto;  
-          strncpy (token, yytext, TAM_TOKEN);
-          IMPRIME(" ponto  ");
-          return PONTO; 
+\. {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" ponto  ");
+    return PONTO; 
     }
 
-\(  { simbolo = simb_abre_parenteses;  
-          strncpy (token, yytext, TAM_TOKEN);
-          IMPRIME(" abre_parenteses  ");
-          return ABRE_PARENTESES;
+\(  {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" abre_parenteses  ");
+    return ABRE_PARENTESES;
     }
 
-\)  { simbolo = simb_fecha_parenteses;  
-          strncpy (token, yytext, TAM_TOKEN);
-          IMPRIME(" fecha_parenteses ");
-          return FECHA_PARENTESES;
+\)  {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" fecha_parenteses ");
+    return FECHA_PARENTESES;
  }
 
-{ident} { simbolo = simb_identificador; 
-          strncpy (token, yytext, TAM_TOKEN);
-          IMPRIME(" ident  ");
-          return IDENT;
-        }
+\* { 
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" * ");
+    return MULT;
+ }
 
+\+ { 
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" + ");
+    return MAIS;
+ }
+
+\- { 
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" - ");
+    return MENOS;
+ }
+
+
+\>  { 
+  strncpy (token, yytext, TAM_TOKEN);
+  IMPRIME(" > ");
+  return MAIOR;
+}
+
+\<  { 
+  strncpy (token, yytext, TAM_TOKEN);
+  IMPRIME(" < ");
+  return MENOR;
+}
+
+\>=  { 
+  strncpy (token, yytext, TAM_TOKEN);
+  IMPRIME(" >=");
+  return MAIOR_IGUAL;
+}
+
+\<=  { 
+  strncpy (token, yytext, TAM_TOKEN);
+  IMPRIME(" <= ");
+  return MENOR_IGUAL;
+}
+
+\<> { 
+  strncpy (token, yytext, TAM_TOKEN);
+  IMPRIME(" <> ");
+  return DIFERENTE;
+}
+
+\=  { 
+  strncpy (token, yytext, TAM_TOKEN);
+  IMPRIME(" == ");
+  return IGUAL;
+}
+
+or {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" or ");
+    return OR;
+}
+
+and {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" and ");
+    return AND;
+}
+
+NOT {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" NOT ");
+    return NOT;
+}
+
+div {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" div ");
+    return DIV;
+}
+
+{ident} {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" ident  ");
+    return IDENT;
+}
+
+{numero} {
+  strncpy (token, yytext, TAM_TOKEN);
+  IMPRIME(" numero  ");
+  return NUMERO;
+}
 
 %%
 

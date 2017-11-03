@@ -1,21 +1,24 @@
+#include "pilha.h"
+
 #define TAM_ROT 3
 
 typedef enum categorias {
   var_simples, procedimento, param_formal, funcao, rotulo
 } categorias;
 
-typedef enum tipos {
-  tint, tboolean, tunknown
-} tipos;
-
 typedef enum tipos_passagem {
   valor, referencia
 } tipos_passagem;
+
+typedef enum tipos {
+  tint, tboolean, tunknown
+} tipos;
 
 typedef struct param {
   tipos tipo;
   tipos_passagem passagem;
 } param;
+
 
 typedef struct simbolo_base {
     categorias categoria;
@@ -87,4 +90,8 @@ simbolo_rot TS_constroi_simbolo_rot(char *identificador, int nivel_lexico, char 
 
 void TS_imprime(pilha ts);
 
+void TS_simbolo2str(tipo_simbolo *s, char *str);
+
 void TS_atualiza_tipos();
+
+tipo_simbolo *TS_busca(char *identificador, pilha ts);

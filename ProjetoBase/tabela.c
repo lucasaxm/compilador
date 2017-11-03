@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pilha.h"
-#include "tabela.h"
-#include "compilador.h"
+#include "compilador.h" // compilador.h includes tabela.h
 
 simbolo_vs TS_constroi_simbolo_vs(char *identificador, int nivel_lexico, int deslocamento, tipos tipo){
     simbolo_vs vs;
@@ -127,41 +125,46 @@ simbolo_rot TS_constroi_simbolo_rot(char *identificador, int nivel_lexico, char 
 void TS_imprime(pilha ts){
     no n;
     tipo_simbolo *s;
-    int params_str_max=200;
-    char params_str[params_str_max];
-    int i;
-    
+    char simbolo_str[1000];
     n = topo(ts);
     
     while ( n ) {
         s = (tipo_simbolo *) conteudo(n);
-        switch(s->base.categoria){
-            case var_simples:
-                printf("%s / VS(%d) / %d / %d / %d\n", s->vs.identificador, s->vs.categoria, s->vs.nivel_lexico, s->vs.deslocamento, s->vs.tipo);
-                break;
-            case procedimento:
-                params_str[0]='\0';
-                for ( i=0; i < s->proc.n_params; i++) {
-                    snprintf(params_str, params_str_max, "%s{%d, %d}", params_str, s->proc.params[i].tipo, s->proc.params[i].passagem);
-                }
-                printf("%s / PROC(%d) / %d / %s / %d{ %s }\n", s->proc.identificador, s->proc.categoria, s->proc.nivel_lexico, s->proc.rotulo, s->proc.n_params, params_str);
-                break;
-            case param_formal:
-                printf("%s / PF(%d) / %d / %d / %d / %d\n", s->pf.identificador, s->pf.categoria, s->pf.nivel_lexico, s->pf.deslocamento, s->pf.tipo, s->pf.passagem);
-                break;
-            case funcao:
-                params_str[0]='\0';
-                for ( i=0; i < s->func.n_params; i++) {
-                    snprintf(params_str, params_str_max, "%s{%d, %d}", params_str, s->func.params[i].tipo, s->func.params[i].passagem);
-                }
-                printf("%s / FUNC(%d) / %d / %d / %d / %s / %d{ %s }\n", s->func.identificador, s->func.categoria, s->func.nivel_lexico, s->func.deslocamento, s->func.tipo, s->func.rotulo, s->func.n_params, params_str);
-                break;
-            case rotulo:
-                printf("%s / ROT(%d) / %d / %s\n", s->rot.identificador, s->rot.categoria, s->rot.nivel_lexico, s->rot.rotulo);
-                break;
-        }
-        
+        TS_simbolo2str(s, simbolo_str);
+        printf("%s\n",simbolo_str);
         n = proximo_no(n);
+    }
+}
+
+void TS_simbolo2str(tipo_simbolo *s, char *str){
+    int params_str_max=200;
+    char params_str[params_str_max];
+    int i;
+    
+    switch(s->base.categoria){
+        case var_simples:
+            sprintf(str, "%s / VS(%d) / %d / %d / %d", s->vs.identificador, s->vs.categoria, s->vs.nivel_lexico, s->vs.deslocamento, s->vs.tipo);
+            break;
+        case procedimento:
+            params_str[0]='\0';
+            for ( i=0; i < s->proc.n_params; i++) {
+                snprintf(params_str, params_str_max, "%s{%d, %d}", params_str, s->proc.params[i].tipo, s->proc.params[i].passagem);
+            }
+            sprintf(str, "%s / PROC(%d) / %d / %s / %d{ %s }", s->proc.identificador, s->proc.categoria, s->proc.nivel_lexico, s->proc.rotulo, s->proc.n_params, params_str);
+            break;
+        case param_formal:
+            sprintf(str, "%s / PF(%d) / %d / %d / %d / %d", s->pf.identificador, s->pf.categoria, s->pf.nivel_lexico, s->pf.deslocamento, s->pf.tipo, s->pf.passagem);
+            break;
+        case funcao:
+            params_str[0]='\0';
+            for ( i=0; i < s->func.n_params; i++) {
+                snprintf(params_str, params_str_max, "%s{%d, %d}", params_str, s->func.params[i].tipo, s->func.params[i].passagem);
+            }
+            sprintf(str, "%s / FUNC(%d) / %d / %d / %d / %s / %d{ %s }", s->func.identificador, s->func.categoria, s->func.nivel_lexico, s->func.deslocamento, s->func.tipo, s->func.rotulo, s->func.n_params, params_str);
+            break;
+        case rotulo:
+            sprintf(str, "%s / ROT(%d) / %d / %s", s->rot.identificador, s->rot.categoria, s->rot.nivel_lexico, s->rot.rotulo);
+            break;
     }
 }
 
@@ -182,4 +185,23 @@ void TS_atualiza_tipos(tipos tipo, pilha ts){
         }
         n = proximo_no(n);
     }
+}
+
+tipo_simbolo *TS_busca(char *identificador, pilha ts){
+    no n;
+    tipo_simbolo *s;
+    char simb_str[1000];
+    n = topo(ts);
+    
+    while ( n ) {
+        s = (tipo_simbolo *) conteudo(n);
+        if ( strcmp(identificador, s->base.identificador) == 0 ){
+            TS_simbolo2str(s, simb_str);
+            debug_print("Simbolo encontrado: %s.\n", simb_str);
+            return s;
+        }
+        n = proximo_no(n);
+    }
+    
+    return NULL;
 }

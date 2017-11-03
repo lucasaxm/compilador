@@ -11,6 +11,8 @@
  *
  * ------------------------------------------------------------------- */
 
+#include "tabela.h"
+
 #define DEBUG 1
 
 #define debug_print(fmt, ...) \
@@ -21,25 +23,29 @@
 
 #define TAM_TOKEN 16
 
-typedef enum simbolos { 
-  simb_program, simb_var, simb_begin, simb_end, 
-  simb_identificador, simb_numero,
-  simb_ponto, simb_virgula, simb_ponto_e_virgula, simb_dois_pontos,
-  simb_atribuicao, simb_abre_parenteses, simb_fecha_parenteses,
-  simb_label, simb_procedure, simb_function, simb_goto, simb_if,
-  simb_then, simb_else, simb_while, simb_integer, simb_boolean
-} simbolos;
 
 /* -------------------------------------------------------------------
  * variáveis globais
  * ------------------------------------------------------------------- */
 
-extern simbolos simbolo, relacao;
 extern char token[TAM_TOKEN];
 extern int nivel_lexico;
 extern int desloc;
 extern int nl;
 
+typedef struct aux_atrib {
+    tipo_simbolo *s;
+    tipos tipo;
+} taux_atrib;
 
-simbolos simbolo, relacao;
 char token[TAM_TOKEN];
+
+int num_vars;
+int nivel_lexico;
+pilha tabela_simbolos;
+tipo_simbolo *s;
+taux_atrib aux_atrib;
+int d_rot;
+char s_rot[TAM_ROT+1];
+int has_label;
+char *parametros[3];
