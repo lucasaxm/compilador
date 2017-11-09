@@ -9,7 +9,7 @@ simbolo_vs TS_constroi_simbolo_vs(char *identificador, int nivel_lexico, int des
     vs.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
     strncpy(vs.identificador, identificador, strlen(vs.identificador)+1);
     
-    vs.categoria=var_simples;
+    vs.categoria=CAT_VS;
     
     vs.nivel_lexico = nivel_lexico;
     
@@ -28,7 +28,7 @@ simbolo_proc TS_constroi_simbolo_proc(char *identificador, categorias categoria,
     proc.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
     strncpy(proc.identificador, identificador, strlen(proc.identificador)+1);
     
-    proc.categoria=var_simples;
+    proc.categoria=CAT_PROC;
     
     proc.nivel_lexico = nivel_lexico;
     
@@ -57,7 +57,7 @@ simbolo_pf TS_constroi_simbolo_pf(char *identificador, int nivel_lexico, int des
     pf.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
     strncpy(pf.identificador, identificador, strlen(pf.identificador)+1);
     
-    pf.categoria=var_simples;
+    pf.categoria=CAT_PF;
     
     pf.nivel_lexico = nivel_lexico;
     
@@ -78,7 +78,7 @@ simbolo_func TS_constroi_simbolo_func(char *identificador, categorias categoria,
     func.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
     strncpy(func.identificador, identificador, strlen(func.identificador)+1);
     
-    func.categoria=var_simples;
+    func.categoria=CAT_FUNC;
     
     func.nivel_lexico = nivel_lexico;
     
@@ -111,7 +111,7 @@ simbolo_rot TS_constroi_simbolo_rot(char *identificador, int nivel_lexico, char 
     rot.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
     strncpy(rot.identificador, identificador, strlen(rot.identificador)+1);
     
-    rot.categoria=var_simples;
+    rot.categoria=CAT_ROT;
     
     strncpy(rot.rotulo, rotulo, TAM_ROT);
     
@@ -142,27 +142,27 @@ void TS_simbolo2str(tipo_simbolo *s, char *str){
     int i;
     
     switch(s->base.categoria){
-        case var_simples:
+        case CAT_VS:
             sprintf(str, "%s / VS(%d) / %d / %d / %d", s->vs.identificador, s->vs.categoria, s->vs.nivel_lexico, s->vs.deslocamento, s->vs.tipo);
             break;
-        case procedimento:
+        case CAT_PROC:
             params_str[0]='\0';
             for ( i=0; i < s->proc.n_params; i++) {
                 snprintf(params_str, params_str_max, "%s{%d, %d}", params_str, s->proc.params[i].tipo, s->proc.params[i].passagem);
             }
             sprintf(str, "%s / PROC(%d) / %d / %s / %d{ %s }", s->proc.identificador, s->proc.categoria, s->proc.nivel_lexico, s->proc.rotulo, s->proc.n_params, params_str);
             break;
-        case param_formal:
+        case CAT_PF:
             sprintf(str, "%s / PF(%d) / %d / %d / %d / %d", s->pf.identificador, s->pf.categoria, s->pf.nivel_lexico, s->pf.deslocamento, s->pf.tipo, s->pf.passagem);
             break;
-        case funcao:
+        case CAT_FUNC:
             params_str[0]='\0';
             for ( i=0; i < s->func.n_params; i++) {
                 snprintf(params_str, params_str_max, "%s{%d, %d}", params_str, s->func.params[i].tipo, s->func.params[i].passagem);
             }
             sprintf(str, "%s / FUNC(%d) / %d / %d / %d / %s / %d{ %s }", s->func.identificador, s->func.categoria, s->func.nivel_lexico, s->func.deslocamento, s->func.tipo, s->func.rotulo, s->func.n_params, params_str);
             break;
-        case rotulo:
+        case CAT_ROT:
             sprintf(str, "%s / ROT(%d) / %d / %s", s->rot.identificador, s->rot.categoria, s->rot.nivel_lexico, s->rot.rotulo);
             break;
     }
@@ -176,7 +176,7 @@ void TS_atualiza_tipos(tipos tipo, pilha ts){
     
     while ( n ) {
         s = (tipo_simbolo *) conteudo(n);
-        if (s->vs.tipo == tunknown){
+        if (s->vs.tipo == TIPO_UNKNOWN){
             s->vs.tipo = tipo;
             debug_print ("tipo da vs com ident. \"%s\" atualizado para %d\n", s->vs.identificador, s->vs.tipo);
         }

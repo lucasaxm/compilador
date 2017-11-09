@@ -250,6 +250,18 @@ div {
     return DIV;
 }
 
+true {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" true ");
+    return T_TRUE;
+}
+
+false { 
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME(" false ");
+    return T_FALSE;
+}
+
 {ident} {
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME(" ident  ");

@@ -38,6 +38,18 @@ typedef struct aux_atrib {
     tipos tipo;
 } taux_atrib;
 
+typedef enum erros {
+    ERRO_ATRIB,
+    ERRO_TPARAM,
+    ERRO_NPARAM,
+    ERRO_IDENT_DECL,
+    ERRO_VS_NDECL,
+    ERRO_PROC_NDECL,
+    ERRO_FUNC_NDECL,
+    ERRO_ROT_NDECL,
+    ERRO_TINCOMPATIVEL
+} erros;
+
 char token[TAM_TOKEN];
 
 int num_vars;

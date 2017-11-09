@@ -3,15 +3,15 @@
 #define TAM_ROT 3
 
 typedef enum categorias {
-  var_simples, procedimento, param_formal, funcao, rotulo
+  CAT_VS, CAT_PROC, CAT_PF, CAT_FUNC, CAT_ROT
 } categorias;
 
 typedef enum tipos_passagem {
-  valor, referencia
+  PASS_VAL, PASS_REF
 } tipos_passagem;
 
 typedef enum tipos {
-  tint, tboolean, tunknown
+  TIPO_INT, TIPO_BOOL, TIPO_UNKNOWN
 } tipos;
 
 typedef struct param {
