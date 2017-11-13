@@ -2,6 +2,18 @@
 
 #define TAM_ROT 3
 
+typedef enum erros {
+    ERRO_ATRIB,
+    ERRO_TPARAM,
+    ERRO_NPARAM,
+    ERRO_IDENT_DECL,
+    ERRO_VS_NDECL,
+    ERRO_PROC_NDECL,
+    ERRO_FUNC_NDECL,
+    ERRO_ROT_NDECL,
+    ERRO_TINCOMPATIVEL
+} erros;
+
 typedef enum categorias {
   CAT_VS, CAT_PROC, CAT_PF, CAT_FUNC, CAT_ROT
 } categorias;
@@ -80,18 +92,22 @@ typedef union simbolo {
 
 simbolo_vs TS_constroi_simbolo_vs(char *identificador, int nivel_lexico, int deslocamento, tipos tipo);
 
-simbolo_proc TS_constroi_simbolo_proc(char *identificador, categorias categoria, int nivel_lexico, char *rotulo, int n_params, param *params);
+simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, char *rotulo, int n_params, param *params);
 
 simbolo_pf TS_constroi_simbolo_pf(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, tipos_passagem passagem);
 
-simbolo_func TS_constroi_simbolo_func(char *identificador, categorias categoria, int nivel_lexico, int deslocamento, tipos tipo, char *rotulo, int n_params, param *params);
+simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, char *rotulo, int n_params, param *params);
 
 simbolo_rot TS_constroi_simbolo_rot(char *identificador, int nivel_lexico, char *rotulo);
 
 void TS_imprime(pilha ts);
 
-void TS_simbolo2str(tipo_simbolo *s, char *str);
+void TS_simbolo2str(void *s, char *str);
 
-void TS_atualiza_tipos();
+int TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts);
 
 tipo_simbolo *TS_busca(char *identificador, pilha ts);
+
+int TS_tamanho(pilha ts);
+
+int TS_remove_vs(int nivel_lexico, pilha ts);

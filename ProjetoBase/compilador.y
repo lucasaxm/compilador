@@ -3,9 +3,16 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "compilador.h"
 #include "pilha.h"
 
+int n_digitos(int n){
+    if (n==0)
+        return 1;
+    else
+        return floor(log10(abs(n))) + 1;
+}
 
 void erro(erros e){
     int msg_size=100;
@@ -68,9 +75,9 @@ char *prox_rotulo(){
 }
 
 void aloca_mem(){
-  if(num_vars>0){
+    if(num_vars <= 0)
+        return;
     char comando[5]="AMEM"; 
-    char *parametros[3];
     // aloca variável aux pra converter num_vars pra string
     char aux[10];
     // converte num_vars pra string
@@ -83,8 +90,28 @@ void aloca_mem(){
     strncpy(parametros[0], aux, sizeof(parametros[0]));
     debug_print ("num_vars=[%d] comando=[%s] parametros[0]=[%s]\n", num_vars, comando, parametros[0]);
     num_vars=0; // zera contador de variáveis
-    geraCodigo (NULL, comando, parametros);
-  }  
+    geraCodigo (NULL, "AMEM", parametros);
+    TS_imprime(tabela_simbolos);
+}
+
+void desaloca_mem(){ 
+    if (TS_tamanho(tabela_simbolos) <= 0)
+        return;
+    char comando[5]="DMEM"; 
+    int vs_desalocadas = TS_remove_vs(nivel_lexico, tabela_simbolos);
+    // aloca variável aux pra converter vs_desalocadas pra string
+    char aux[10];
+    // converte vs_desalocadas pra string
+    snprintf(aux, sizeof(aux), "%d", vs_desalocadas);
+    // aloca memoria para primeiro param
+    parametros[0] = (char *) realloc( (void *) parametros[0], sizeof(char)*(strlen(aux)+1) );
+    parametros[1] = NULL;
+    parametros[2] = NULL;
+    // armazena valor em parametros[0]
+    strncpy(parametros[0], aux, sizeof(parametros[0]));
+    debug_print ("vs_desalocadas=[%d] comando=[%s] parametros[0]=[%s]\n", vs_desalocadas, comando, parametros[0]);
+    geraCodigo (NULL, "DMEM", parametros);
+    TS_imprime(tabela_simbolos);
 }
 
 /* Decide tipo de armazenamento */
@@ -122,7 +149,7 @@ void armazena(){
     }
 }
 
-// /* Decide tipo de carrega */
+/* Decide tipo de carrega */
 void carrega(tipo_simbolo *simb){
     int tam_params=10;
     parametros[0] = (char *) realloc( (void *) parametros[0], sizeof(char)*tam_params ); // tam_params char de memória
@@ -178,13 +205,18 @@ programa :
         nivel_lexico=0;
         d_rot=0;
         tabela_simbolos = constroi_pilha();
-        geraCodigo (NULL, "INPP", NULL); 
+        pilha_rotulos_dsvs = constroi_pilha();
+        parametros[0]=NULL;
+        parametros[1]=NULL;
+        parametros[2]=NULL;
+        geraCodigo (NULL, "INPP", NULL);
     }
     PROGRAM IDENT 
     ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA
     bloco PONTO
     {
         geraCodigo (NULL, "PARA", NULL);
+        desaloca_mem();
         TS_imprime(tabela_simbolos);
     }
 ;
@@ -193,7 +225,23 @@ bloco :
     parte_declara_vars
     {
         aloca_mem();
+        char *rot_dsvs_aux = prox_rotulo();
+        char *rotulo_dsvs = (char *) malloc( sizeof(char)*( strlen(s_rot)+1 ) );
+        strncpy(rotulo_dsvs, s_rot, strlen(s_rot)+1);
+        empilha( (void *) rotulo_dsvs, pilha_rotulos_dsvs);
+        parametros[0] = (char *) realloc( (void *) parametros[0], sizeof(char)*strlen(rotulo_dsvs) );
+        parametros[1]=NULL;
+        parametros[2]=NULL;
+        strncpy(parametros[0], rotulo_dsvs, strlen(s_rot)+1);
+        geraCodigo (NULL, "DSVS", parametros);
     }
+    parte_declara_subrotinas
+    {
+        char *rot_dsvs_aux = desempilha(pilha_rotulos_dsvs);
+        geraCodigo(rot_dsvs_aux, "NADA", NULL);
+        free(rot_dsvs_aux);
+    }
+    
     comando_composto 
 ;
 
@@ -211,10 +259,83 @@ var:
     IDENT
 ;
 
+/* DECLARACAO DE SUBROTINAS */
+
+parte_declara_subrotinas:
+    parte_declara_subrotinas declara_procedimento PONTO_E_VIRGULA
+    | parte_declara_subrotinas declara_funcao PONTO_E_VIRGULA
+    |
+;
+
+declara_procedimento:
+    PROCEDURE IDENT
+    {
+        debug_print("Iniciando declaracao do procedimento '%s'\n", token);
+        s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
+        params_aux = (param *) malloc(sizeof(param));
+        s->proc = TS_constroi_simbolo_proc(token, ++nivel_lexico, prox_rotulo(), 0, params_aux);
+        empilha((void *) s, tabela_simbolos);
+        geraCodigo(s->proc.rotulo, "ENPR", NULL);
+        int num_params=0;
+    }
+    params_formais PONTO_E_VIRGULA
+    bloco
+;
+
+params_formais:
+    ABRE_PARENTESES declara_params FECHA_PARENTESES
+    | ABRE_PARENTESES FECHA_PARENTESES
+;
+
+declara_params: declara_params PONTO_E_VIRGULA declara_param 
+            | declara_param 
+;
+
+declara_param :
+    VAR
+    {
+        aux_passagem = PASS_REF;
+    }
+    lista_id_param DOIS_PONTOS
+    {
+        aux_categoria = CAT_PF;
+    }
+    tipo
+    |
+    {
+        aux_passagem = PASS_VAL;
+    }
+    lista_id_param DOIS_PONTOS
+    {
+        aux_categoria = CAT_PF;
+    }
+    tipo
+    
+;
+
+lista_id_param:
+    lista_id_param VIRGULA id_param 
+    | id_param
+;
+
+id_param:
+    IDENT
+    { /* insere params na tabela de símbolos */
+        s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
+        s->pf = TS_constroi_simbolo_pf(token, nivel_lexico, 0, TIPO_UNKNOWN, aux_passagem); // atualizar deslocamento e tipo depois
+        empilha((void *) s, tabela_simbolos);
+        conta_tipo++;
+    }
+;
+
+declara_funcao:
+;
+
 /* DECLARACAO DE VARS */
 
 parte_declara_vars:
-    VAR declara_vars
+    VAR
+    declara_vars
     |
 ;
 
@@ -223,19 +344,21 @@ declara_vars: declara_vars declara_var
 ;
 
 declara_var :
-    lista_id_var DOIS_PONTOS 
-    tipo 
-    PONTO_E_VIRGULA
+    lista_id_var DOIS_PONTOS
+    {
+        aux_categoria = CAT_VS;
+    }
+    tipo PONTO_E_VIRGULA
 ;
 
 tipo :
     BOOL
     {
-        TS_atualiza_tipos(TIPO_BOOL,tabela_simbolos);
+        TS_atualiza_tipos(TIPO_BOOL, aux_categoria, tabela_simbolos);
     }
     | INT
     {
-        TS_atualiza_tipos(TIPO_INT,tabela_simbolos);
+        TS_atualiza_tipos(TIPO_INT, aux_categoria, tabela_simbolos);
     }
 ;
 
@@ -250,7 +373,9 @@ id_var:
         s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
         s->vs = TS_constroi_simbolo_vs(token, nivel_lexico, num_vars++, TIPO_UNKNOWN);
         empilha((void *) s, tabela_simbolos);
+        conta_tipo++;
     }
+;
 
 /* COMANDOS */
 
@@ -292,12 +417,27 @@ atrib:
     {
         debug_print("begin atribuicao. token=[%s]\n", token);
         aux_atrib.s = TS_busca(token, tabela_simbolos);
+        if (aux_atrib.s == NULL) {
+            erro(ERRO_VS_NDECL);
+        }
+        switch (aux_atrib.s->base.categoria){
+            case CAT_PF:
+                aux_atrib.tipo = aux_atrib.s->pf.tipo;
+                break;
+            case CAT_VS:
+                aux_atrib.tipo = aux_atrib.s->vs.tipo;
+                break;
+            default:
+                erro(ERRO_ATRIB);
+                break;
+        }
     }
     IDENT ATRIBUICAO expressao
     {
+        char aux_atrib_simb_str[300];
+        TS_simbolo2str(aux_atrib.s, aux_atrib_simb_str);
         debug_print ("Regra: %s | tipo_ident=[%d] tipo_expressao=[%d]\n","atrib", aux_atrib.tipo, $4);
-        debug_print ("$4=[%d]\n", $4);
-        debug_print ("%s\n", TS_simbolo2str(aux_atrib.));
+        debug_print ("Simbolo recipient: %s\n", aux_atrib_simb_str);
         if ( $4 != aux_atrib.tipo ) {
             erro(ERRO_ATRIB);
         }

@@ -1,32 +1,40 @@
 #include <malloc.h>
-#include "pilha.h"
+#include "fila.h"
 
 //---------------------------------------------------------------------------
-// nó de pilha encadeada cujo conteúdo é um void *
+// nó de fila encadeada cujo conteúdo é um void *
 
 struct no {
 
   void *conteudo;
   no proximo;
+  // no anterior;
 };
 //---------------------------------------------------------------------------
-// pilha encadeada
+// fila encadeada
 
-struct pilha {
+struct fila {
   
   unsigned int tamanho;
-  no topo;
+  no inicio;
+  no final;
 };
 //---------------------------------------------------------------------------
-// devolve o número de nós da pilha p
+// devolve o número de nós da fila f
 
-unsigned int tamanho_pilha(pilha p) { return p->tamanho; }
+unsigned int tamanho_fila(fila f) { return f->tamanho; }
 
 //---------------------------------------------------------------------------
-// devolve o topo da pilha p,
+// devolve o inicio da fila f,
 //      ou NULL, se l é vazia
 
-no topo(pilha p) { return p->topo; }
+no inicio(fila f) { return f->inicio; }
+
+//---------------------------------------------------------------------------
+// devolve o inicio da fila f,
+//      ou NULL, se l é vazia
+
+no final(fila f) { return f->final; }
 
 //---------------------------------------------------------------------------
 // devolve o conteúdo do nó n
@@ -36,47 +44,52 @@ void *conteudo(no n) { return n->conteudo; }
 
 //---------------------------------------------------------------------------
 // devolve o sucessor do nó n,
-//      ou NULL, se n for o último nó da pilha
-
+//      ou NULL, se n for o último nó da fila
 no proximo_no(no n) { return n->proximo; }
 
 //---------------------------------------------------------------------------
-// cria uma pilha vazia e a devolve
+// devolve o sucessor do nó n,
+//      ou NULL, se n for o último nó da fila
+// no anterior_no(no n) { return n->anterior; }
+
+//---------------------------------------------------------------------------
+// cria uma fila vazia e a devolve
 //
 // devolve NULL em caso de falha
 
-pilha constroi_pilha(void) {
+fila constroi_fila(void) {
 
-  pilha p = malloc(sizeof(struct pilha));
+  fila f = malloc(sizeof(struct fila));
 
-  if ( ! p ) 
+  if ( ! f ) 
     return NULL;
 
-  p->topo = NULL;
-  p->tamanho = 0;
+  f->inicio = NULL;
+  f->final = NULL;
+  f->tamanho = 0;
 
-  return p;
+  return f;
 }
 //---------------------------------------------------------------------------
-// desaloca a pilha p e todos os seus nós
+// desaloca a fila f e todos os seus nós
 // 
 // se destroi != NULL invoca
 //
 //     destroi(conteudo(n)) 
 //
-// para cada nó n da pilha. 
+// para cada nó n da fila. 
 //
 // devolve 1 em caso de sucesso,
 //      ou 0 em caso de falha
 
-int destroi_pilha(pilha p, int destroi(void *)) { 
+int destroi_fila(fila f, int destroi(void *)) { 
   
   no n;
   int ok=1;
 
-  while ( (n = topo(p)) ) {
+  while ( (n = inicio(f)) ) {
     
-    p->topo = proximo_no(n);
+    f->inicio = proximo_no(n);
 
     if ( destroi )
       ok &= destroi(conteudo(n));
@@ -84,56 +97,57 @@ int destroi_pilha(pilha p, int destroi(void *)) {
     free(n);
   }
 
-  free(p);
+  free(f);
 
   return ok;
 }
 //---------------------------------------------------------------------------
-// insere um novo nó na pilha p cujo conteúdo é p
+// insere um novo nó na fila f cujo conteúdo é p
 //
 // devolve o no recém-criado 
 //      ou NULL em caso de falha
 
-no empilha(void *conteudo, pilha p) { 
+no enfileira(void *conteudo, fila f) { 
 
   no novo = malloc(sizeof(struct no));
 
   if ( ! novo ) 
     return NULL;
 
+  f->final->proximo = novo;
   novo->conteudo = conteudo;
-  novo->proximo = topo(p);
-  ++p->tamanho;
+  novo->proximo = NULL;
+  ++f->tamanho;
   
-  return p->topo = novo;
+  return f->final = novo;
 }
 
 //---------------------------------------------------------------------------
-// retorna e remove o conteudo do topo da pilha
+// retorna e remove o conteudo do inicio da fila
 //
-// devolve o topo da pilha
-//      ou NULL em caso de pilha vazia
-void *desempilha(pilha p) {
-  no ex_topo;
+// devolve o inicio da fila
+//      ou NULL em caso de fila vazia
+void *desenfileira(fila f) {
+  no ex_inicio;
   void *cont;
   
-  if (p->tamanho<=0)
+  if (f->tamanho<=0)
     return NULL;
     
-  ex_topo = topo(p);
-  p->topo = proximo_no(ex_topo);
-  p->tamanho--;
+  ex_inicio = inicio(f);
+  f->inicio = proximo_no(ex_inicio);
+  f->tamanho--;
   
-  cont = conteudo(ex_topo);
-  free(ex_topo);
+  cont = conteudo(ex_inicio);
+  free(ex_inicio);
   
   return cont;
 }
 
-void imprime(pilha p, void conteudo2str(void *, char *)) {
+void imprime(fila f, void conteudo2str(void *, char *)) {
   no n;
   void *c;
-  n = topo(p);
+  n = inicio(f);
   char *str_conteudo;
   
   while ( n ) {

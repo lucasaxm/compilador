@@ -82,7 +82,7 @@ void geraCodigo (char* rot, char* comando, char **parametros) {
   }
   
   debug_print("comando_len=[%d]\n",comando_len);
-  if ( has_label ) {
+  if ( rot ) {
     debug_print ("rot+comando_completo:[%s: %s]\n", rot, comando_completo);
     fprintf(fp, "%s: %s \n", rot, comando_completo); fflush(fp);
   } else {

@@ -38,26 +38,20 @@ typedef struct aux_atrib {
     tipos tipo;
 } taux_atrib;
 
-typedef enum erros {
-    ERRO_ATRIB,
-    ERRO_TPARAM,
-    ERRO_NPARAM,
-    ERRO_IDENT_DECL,
-    ERRO_VS_NDECL,
-    ERRO_PROC_NDECL,
-    ERRO_FUNC_NDECL,
-    ERRO_ROT_NDECL,
-    ERRO_TINCOMPATIVEL
-} erros;
-
 char token[TAM_TOKEN];
 
-int num_vars;
-int nivel_lexico;
-pilha tabela_simbolos;
-tipo_simbolo *s;
-taux_atrib aux_atrib;
-int d_rot;
-char s_rot[TAM_ROT+1];
-int has_label;
-char *parametros[3];
+int num_vars;   // numero de vars usar em declaracao
+int nivel_lexico;   // nivel lexico atual
+pilha tabela_simbolos;  // tabela de simbolos
+pilha pilha_rotulos_dsvs; // pilha de rotulos que desviam da decl. de subrotinas
+tipo_simbolo *s;    // simbolo usado em diversos lugares no codigo
+taux_atrib aux_atrib;   // estrutura que auxilia no parsing de atribuicao
+param *params_aux;  // auxiliar para adicionar parametros em subrotina
+tipos_passagem aux_passagem;    // auxiliar para adicionar tipo de passagem de params
+categorias aux_categoria;    // auxiliar para tipo categoria (usado em atualizacao de tipo)
+int d_rot;  // inteiro usado para gerar proximo rotulo
+char s_rot[TAM_ROT+1];  // string que representa o proximo rotulo
+char *main_rot; // rotulo que representa programa principal
+int has_label;  // flag para indicar que proximo comando possui um label
+char *parametros[3];    // vetor de parametros usado no geraCodigo
+int conta_tipo; // contador de simbolos com mesmo tipo que devem ser atualizados

@@ -1,30 +1,32 @@
-#ifndef _PILHA_H
-#define _PILHA_H
+#ifndef _fila_H
+#define _fila_H
 
 //-----------------------------------------------------------------------------
-// (apontador para) pilha encadeada
+// (apontador para) fila encadeada
 
-typedef struct pilha *pilha;
+typedef struct fila *fila;
 
 //-----------------------------------------------------------------------------
-// (apontador para) nó da pilha encadeada cujo conteúdo é um void *
+// (apontador para) nó da fila encadeada cujo conteúdo é um void *
 
 typedef struct no *no;
 
 //------------------------------------------------------------------------------
-// devolve o número de nós da pilha p
+// devolve o número de nós da fila p
 
-unsigned int tamanho_pilha(pilha p);
+unsigned int tamanho_fila(fila f);
 
 //------------------------------------------------------------------------------
-// devolve o primeiro nó da pilha p,
+// devolve o primeiro nó da fila p,
 //      ou NULL, se l é vazia
 
-no topo(pilha p);
+no inicio(fila f);
+
+no final(fila f);
 
 //------------------------------------------------------------------------------
 // devolve o sucessor do nó n,
-//      ou NULL, se n for o último nó da pilha
+//      ou NULL, se n for o último nó da fila
 
 no proximo_no(no n);
 
@@ -34,41 +36,42 @@ no proximo_no(no n);
 
 void *conteudo(no n);
 //------------------------------------------------------------------------------
-// insere um novo nó na pilha p cujo conteúdo é p
+// insere um novo nó na fila p cujo conteúdo é p
 //
 // devolve o no recém-criado 
 //      ou NULL em caso de falha
 
-no empilha(void *conteudo, pilha p);
+no enfileira(void *conteudo, fila f);
 
 //---------------------------------------------------------------------------
-// retorna e remove o conteudo do topo da pilha
+// retorna e remove o conteudo do topo da fila
 //
-// devolve o topo da pilha
-//      ou NULL em caso de pilha vazia
-void *desempilha(pilha p);
+// devolve o topo da fila
+//      ou NULL em caso de fila vazia
+void *desenfileira(fila f);
     
 //------------------------------------------------------------------------------
-// cria uma pilha vazia e a devolve
+// cria uma fila vazia e a devolve
 //
 // devolve NULL em caso de falha
 
-pilha constroi_pilha(void);
+fila constroi_fila(void);
 //------------------------------------------------------------------------------
-// desaloca a pilha p e todos os seus nós
+// desaloca a fila p e todos os seus nós
 // 
 // se destroi != NULL invoca
 //
 //     destroi(conteudo(n)) 
 //
-// para cada nó n da pilha. 
+// para cada nó n da fila. 
 //
 // devolve 1 em caso de sucesso,
 //      ou 0 em caso de falha
 
-int destroi_pilha(pilha p, int destroi(void *));
+int destroi_fila(fila f, int destroi(void *));
 
-void imprime(pilha p, void conteudo2str(void *, char *));
+void imprime(fila f, void conteudo2str(void *, char *));
+
 
 
 #endif
