@@ -40,18 +40,18 @@ typedef struct aux_atrib {
 
 char token[TAM_TOKEN];
 
-int num_vars;   // numero de vars usar em declaracao
+int num_vars;   // numero de vars de subrot
+int num_params_subrot; // numero de params na decl de subrot
 int nivel_lexico;   // nivel lexico atual
 pilha tabela_simbolos;  // tabela de simbolos
 pilha pilha_rotulos_dsvs; // pilha de rotulos que desviam da decl. de subrotinas
 tipo_simbolo *s;    // simbolo usado em diversos lugares no codigo
 taux_atrib aux_atrib;   // estrutura que auxilia no parsing de atribuicao
-param *params_aux;  // auxiliar para adicionar parametros em subrotina
 tipos_passagem aux_passagem;    // auxiliar para adicionar tipo de passagem de params
 categorias aux_categoria;    // auxiliar para tipo categoria (usado em atualizacao de tipo)
 int d_rot;  // inteiro usado para gerar proximo rotulo
 char s_rot[TAM_ROT+1];  // string que representa o proximo rotulo
 char *main_rot; // rotulo que representa programa principal
 int has_label;  // flag para indicar que proximo comando possui um label
-char *parametros[3];    // vetor de parametros usado no geraCodigo
 int conta_tipo; // contador de simbolos com mesmo tipo que devem ser atualizados
+fila parametros; // fila de parametros usada no geraCodigo

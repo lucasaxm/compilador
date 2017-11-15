@@ -7,7 +7,7 @@ simbolo_vs TS_constroi_simbolo_vs(char *identificador, int nivel_lexico, int des
     simbolo_vs vs;
     
     vs.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
-    strncpy(vs.identificador, identificador, strlen(vs.identificador)+1);
+    strncpy(vs.identificador, identificador, strlen(identificador)+1);
     
     vs.categoria=CAT_VS;
     
@@ -22,11 +22,11 @@ simbolo_vs TS_constroi_simbolo_vs(char *identificador, int nivel_lexico, int des
     return vs;
 }
 
-simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, char *rotulo, int n_params, param *params){
+simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, char *rotulo, int n_params, fila params){
     simbolo_proc proc;
     
     proc.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
-    strncpy(proc.identificador, identificador, strlen(proc.identificador)+1);
+    strncpy(proc.identificador, identificador, strlen(identificador)+1);
     
     proc.categoria=CAT_PROC;
     
@@ -34,19 +34,18 @@ simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, cha
     
     strncpy(proc.rotulo, rotulo, TAM_ROT);
     
-    proc.n_params = n_params;
-    
-    proc.params = params;
-    
-    // params_str used for debug
-    int params_str_max=200;
-    char params_str[params_str_max];
-    params_str[0]='\0';
-    int i;
-    for ( i=0; i < n_params; i++) {
-        snprintf(params_str, params_str_max, "%s{%d, %d}", params_str, params[i].tipo, params[i].passagem);
+    if (params){
+        proc.n_params = n_params;
+        proc.params = params;
     }
-    debug_print("%s / PROC(%d) / %d / %s / %d{ %s }\n", proc.identificador, proc.categoria, proc.nivel_lexico, proc.rotulo, proc.n_params, params_str);
+    else {
+        proc.n_params = 0;
+        proc.params = constroi_fila();
+    }
+    
+    char *simb_str = TS_simbolo2str(&proc);
+    debug_print("%s\n", simb_str);
+    free (simb_str);
     
     return proc;
 }
@@ -55,7 +54,7 @@ simbolo_pf TS_constroi_simbolo_pf(char *identificador, int nivel_lexico, int des
     simbolo_pf pf;
     
     pf.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
-    strncpy(pf.identificador, identificador, strlen(pf.identificador)+1);
+    strncpy(pf.identificador, identificador, strlen(identificador)+1);
     
     pf.categoria=CAT_PF;
     
@@ -67,16 +66,18 @@ simbolo_pf TS_constroi_simbolo_pf(char *identificador, int nivel_lexico, int des
     
     pf.passagem = passagem;
     
-    debug_print("%s / PF(%d) / %d / %d / %d / %d\n", pf.identificador, pf.categoria, pf.nivel_lexico, pf.deslocamento, pf.tipo, pf.passagem);
+    char *simb_str = TS_simbolo2str(&pf);
+    debug_print("%s\n", simb_str);
+    free (simb_str);
     
     return pf;
 }
 
-simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, char *rotulo, int n_params, param *params){
+simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, char *rotulo, int n_params, fila params){
     simbolo_func func;
     
     func.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
-    strncpy(func.identificador, identificador, strlen(func.identificador)+1);
+    strncpy(func.identificador, identificador, strlen(identificador)+1);
     
     func.categoria=CAT_FUNC;
     
@@ -88,19 +89,18 @@ simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int
     
     strncpy(func.rotulo, rotulo, TAM_ROT);
     
-    func.n_params = n_params;
-    
-    func.params = params;
-    
-    // params_str used for debug
-    int params_str_max=200;
-    char params_str[params_str_max];
-    params_str[0]='\0';
-    int i;
-    for ( i=0; i < n_params; i++) {
-        snprintf(params_str, params_str_max, "%s{%d, %d}", params_str, params[i].tipo, params[i].passagem);
+    if (params){
+        func.n_params = n_params;
+        func.params = params;
     }
-    debug_print("%s / FUNC(%d) / %d / %d / %d / %s / %d{ %s }\n", func.identificador, func.categoria, func.nivel_lexico, func.deslocamento, func.tipo, func.rotulo, func.n_params, params_str);
+    else {
+        func.n_params = 0;
+        func.params = constroi_fila();
+    }
+    
+    char *simb_str = TS_simbolo2str(&func);
+    debug_print("%s\n", simb_str);
+    free (simb_str);
     
     return func;
 }
@@ -109,7 +109,7 @@ simbolo_rot TS_constroi_simbolo_rot(char *identificador, int nivel_lexico, char 
     simbolo_rot rot;
     
     rot.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
-    strncpy(rot.identificador, identificador, strlen(rot.identificador)+1);
+    strncpy(rot.identificador, identificador, strlen(identificador)+1);
     
     rot.categoria=CAT_ROT;
     
@@ -117,95 +117,132 @@ simbolo_rot TS_constroi_simbolo_rot(char *identificador, int nivel_lexico, char 
     
     rot.nivel_lexico = nivel_lexico;
     
-    debug_print("%s / ROT(%d) / %d / %s\n", rot.identificador, rot.categoria, rot.nivel_lexico, rot.rotulo);
+    char *simb_str = TS_simbolo2str(&rot);
+    debug_print("%s\n", simb_str);
+    free (simb_str);
     
     return rot;
 }
 
 void TS_imprime(pilha ts){
-    imprime(ts,TS_simbolo2str);
+    imprime_pilha(ts,TS_simbolo2str);
 }
 
-void TS_simbolo2str(void *simbolo_void, char *str){
-    int i;
+char *TS_params2str(fila params){
+    
+    int param_str_len = strlen("{0, 0}");
+    int params_str_len = param_str_len*(tamanho_fila(params));
+    
+    char param_str[param_str_len+1];
+    char *params_str = malloc (sizeof(char)*(params_str_len+1));
+    
+    param *p;
+    
+    params_str[0]='\0';
+    
+    no_fila n = inicio(params);
+    while (n) {
+        p = (param *) conteudo_fila(n);
+        snprintf(param_str, params_str_len+1, "{%d, %d}", p->tipo, p->passagem);
+        strncat(params_str, param_str, params_str_len+1);
+        n = proximo_no_fila(n);
+    }
+    return params_str;
+}
+
+char *TS_simbolo2str(void *simbolo_void){
     int str_len=0;
     tipo_simbolo *s = (tipo_simbolo *) simbolo_void;
+    char *str;
     switch(s->base.categoria){
         case CAT_VS:
             str_len+=strlen(s->vs.identificador);
+            str_len+=strlen(" / VS(");
             str_len+=n_digitos(s->vs.categoria);
+            str_len+=strlen(") / ");
             str_len+=n_digitos(s->vs.nivel_lexico);
+            str_len+=strlen(" / ");
             str_len+=n_digitos(s->vs.deslocamento);
+            str_len+=strlen(" / ");
             str_len+=n_digitos(s->vs.tipo);
-            str_len+=17; // outros caracteres
-            str = realloc( str, sizeof(char)*(str_len+1) );
+            str = malloc(sizeof(char)*(str_len+1));
             snprintf(str, str_len+1, "%s / VS(%d) / %d / %d / %d", s->vs.identificador, s->vs.categoria, s->vs.nivel_lexico, s->vs.deslocamento, s->vs.tipo);
             break;
         case CAT_PROC: {
-            int one_param_len=strlen("{0, 0}");
-            int params_str_len = one_param_len*(s->proc.n_params)+1;
-            char params_str[params_str_len];
-            params_str[0]='\0';
-            for ( i=0; i < s->proc.n_params; i++) {
-                snprintf(params_str, params_str_len, "%s{%d, %d}", params_str, s->proc.params[i].tipo, s->proc.params[i].passagem);
-            }
+            char *params_str = TS_params2str(s->proc.params);
             str_len+=strlen(s->proc.identificador);
+            str_len+=strlen(" / PROC(");
             str_len+=n_digitos(s->proc.categoria);
+            str_len+=strlen(") / ");
             str_len+=n_digitos(s->proc.nivel_lexico);
+            str_len+=strlen(" / ");
             str_len+=n_digitos(s->proc.rotulo);
+            str_len+=strlen(" / ");
             str_len+=n_digitos(s->proc.n_params);
+            str_len+=strlen("{ ");
             str_len+=strlen(params_str);
-            str_len+=22;
-            str = realloc( str, sizeof(char)*(str_len+1) );
+            str_len+=strlen(" }");
+            str = malloc(sizeof(char)*(str_len+1));
             snprintf(str, str_len+1, "%s / PROC(%d) / %d / %s / %d{ %s }", s->proc.identificador, s->proc.categoria, s->proc.nivel_lexico, s->proc.rotulo, s->proc.n_params, params_str);
+            free(params_str);
             break;
         }
         case CAT_PF:
             str_len+=strlen(s->vs.identificador);
+            str_len+=strlen(" / PF(");
             str_len+=n_digitos(s->pf.categoria);
+            str_len+=strlen(") / ");
             str_len+=n_digitos(s->pf.nivel_lexico);
+            str_len+=strlen(" / ");
             str_len+=n_digitos(s->pf.deslocamento);
+            str_len+=strlen(" / ");
             str_len+=n_digitos(s->pf.tipo);
+            str_len+=strlen(" / ");
             str_len+=n_digitos(s->pf.passagem);
-            str_len+=19; // outros caracteres
-            str = realloc( str, sizeof(char)*(str_len+1) );
+            str = malloc(sizeof(char)*(str_len+1));
             snprintf(str, str_len+1, "%s / PF(%d) / %d / %d / %d / %d", s->pf.identificador, s->pf.categoria, s->pf.nivel_lexico, s->pf.deslocamento, s->pf.tipo, s->pf.passagem);
             break;
         case CAT_FUNC: {
-            int one_param_len=strlen("{0, 0}");
-            int params_str_len = one_param_len*(s->proc.n_params)+1;
-            char params_str[params_str_len];
-            params_str[0]='\0';
-            for ( i=0; i < s->func.n_params; i++) {
-                snprintf(params_str, params_str_len, "%s{%d, %d}", params_str, s->func.params[i].tipo, s->func.params[i].passagem);
-            }
+            char *params_str = TS_params2str(s->proc.params);
             str_len+=strlen(s->func.identificador);
+            str_len+=strlen(" / FUNC(");
             str_len+=n_digitos(s->func.categoria);
+            str_len+=strlen(") / ");
             str_len+=n_digitos(s->func.nivel_lexico);
+            str_len+=strlen(" / ");
             str_len+=n_digitos(s->func.deslocamento);
+            str_len+=strlen(" / ");
             str_len+=n_digitos(s->func.tipo);
+            str_len+=strlen(" / ");
             str_len+=n_digitos(s->func.rotulo);
+            str_len+=strlen(" / ");
             str_len+=n_digitos(s->func.n_params);
+            str_len+=strlen("{ ");
             str_len+=strlen(params_str);
-            str_len+=28;
-            str = realloc( str, sizeof(char)*(str_len+1) );
+            str_len+=strlen(" }");
+            str = malloc(sizeof(char)*(str_len+1));
             snprintf(str, str_len+1, "%s / FUNC(%d) / %d / %d / %d / %s / %d{ %s }", s->func.identificador, s->func.categoria, s->func.nivel_lexico, s->func.deslocamento, s->func.tipo, s->func.rotulo, s->func.n_params, params_str);
+            free (params_str);
             break;
         }
         case CAT_ROT:
             str_len+=strlen(s->rot.identificador);
+            str_len+=strlen(" / ROT(");
             str_len+=n_digitos(s->rot.categoria);
+            str_len+=strlen(") / ");
             str_len+=n_digitos(s->rot.nivel_lexico);
+            str_len+=strlen(" / ");
             str_len+=strlen(s->rot.rotulo);
-            str_len+=14;
+            str = malloc(sizeof(char)*(str_len+1));
             sprintf(str, "%s / ROT(%d) / %d / %s", s->rot.identificador, s->rot.categoria, s->rot.nivel_lexico, s->rot.rotulo);
             break;
     }
+    return str;
 }
 
 /* Retorna 1 em sucesso e 0 em falha*/
 int TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts){
-    no n;
+    no_pilha n;
     tipo_simbolo *s;
     int i;
     
@@ -221,11 +258,11 @@ int TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts){
         return 0;
     }
     
-    s = (tipo_simbolo *) conteudo(n);
+    s = (tipo_simbolo *) conteudo_pilha(n);
     switch(cat){
         case CAT_VS:
-            for (i=0; (i < conta_tipo) && n; i++, n=proximo_no(n)) {
-                s = (tipo_simbolo *) conteudo(n);
+            for (i=0; (i < conta_tipo) && n; i++, n=proximo_no_pilha(n)) {
+                s = (tipo_simbolo *) conteudo_pilha(n);
                 if (s->vs.tipo == TIPO_UNKNOWN){
                     s->vs.tipo = tipo;
                     debug_print ("tipo da vs com ident. \"%s\" atualizado para %d\n", s->vs.identificador, s->vs.tipo);
@@ -237,8 +274,8 @@ int TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts){
             }
             break;
         case CAT_PF:
-            for (i=0; (i < conta_tipo) && n; i++, n=proximo_no(n)) {
-                s = (tipo_simbolo *) conteudo(n);
+            for (i=0; (i < conta_tipo) && n; i++, n=proximo_no_pilha(n)) {
+                s = (tipo_simbolo *) conteudo_pilha(n);
                 if (s->pf.tipo == TIPO_UNKNOWN){
                     s->pf.tipo = tipo;
                     debug_print ("tipo do pf com ident. \"%s\" atualizado para %d\n", s->pf.identificador, s->pf.tipo);
@@ -251,9 +288,9 @@ int TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts){
             break;
         case CAT_FUNC:
             while(n){
-                s = (tipo_simbolo *) conteudo(n);
+                s = (tipo_simbolo *) conteudo_pilha(n);
                 if (s->base.categoria == CAT_FUNC) break;
-                n=proximo_no(n);
+                n=proximo_no_pilha(n);
             }
             if(!n){
                 debug_print("%s\n","Nenhuma func encontrada na tabela de simbolos.");
@@ -274,19 +311,21 @@ int TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts){
 }
 
 tipo_simbolo *TS_busca(char *identificador, pilha ts){
-    no n;
+    no_pilha n;
     tipo_simbolo *s;
-    char simb_str[1000];
+    char *simb_str;
     n = topo(ts);
     
     while ( n ) {
-        s = (tipo_simbolo *) conteudo(n);
+        s = (tipo_simbolo *) conteudo_pilha(n);
         if ( strcmp(identificador, s->base.identificador) == 0 ){
-            TS_simbolo2str(s, simb_str);
+            char *simb_str_ptr = simb_str;
+            simb_str = TS_simbolo2str(s);
             debug_print("Simbolo encontrado: %s.\n", simb_str);
+            free (simb_str);
             return s;
         }
-        n = proximo_no(n);
+        n = proximo_no_pilha(n);
     }
     
     return NULL;
@@ -297,15 +336,12 @@ int TS_tamanho(pilha ts){
 }
 
 int TS_remove_vs(int nivel_lexico, pilha ts){
-    // if (TS_tamanho(ts) <= 0)
-    //     return 0;
-        
-    no n = topo(ts);
+    no_pilha n = topo(ts);
     int i=0;
     tipo_simbolo *s;
     
     while (n){
-        s = (tipo_simbolo *) conteudo(n);
+        s = (tipo_simbolo *) conteudo_pilha(n);
         if (s->base.categoria == CAT_VS){
             free (desempilha(ts));
             i++;
@@ -313,7 +349,74 @@ int TS_remove_vs(int nivel_lexico, pilha ts){
         else {
             break;
         }
+        n = topo(ts);
     }
     
     return i;
+}
+
+void TS_empilha(tipo_simbolo *s, pilha ts){
+    if (s) empilha((void *) s, ts);
+}
+
+
+void TS_atualiza_params(int num_params, pilha ts){
+    debug_print("Atualizando %d parametros.\n", num_params);
+    no_pilha n = topo(ts);
+    int i=0;
+    tipo_simbolo *s;
+    param *p;
+    tipo_simbolo *subrot = TS_busca_subrotina(ts);
+    
+    n = topo(ts);
+    while (n){
+        s = (tipo_simbolo *) conteudo_pilha(n);
+        if (s->base.categoria == CAT_PF){
+            
+            p = (param *) malloc(sizeof(param));
+            s->pf.deslocamento = -4-i;
+            p->tipo = s->pf.tipo;
+            p->passagem = s->pf.passagem;
+            if (subrot->base.categoria == CAT_PROC){
+                enfileira( (void *) p, subrot->proc.params );
+                subrot->proc.n_params++;
+            }
+            else if (subrot->base.categoria == CAT_FUNC){
+                enfileira( (void *) p, subrot->func.params );  
+                subrot->func.n_params++;
+            }
+            
+            i++;
+        }
+        else {
+            break;
+        }
+        n = proximo_no_pilha(n);
+    }
+    debug_print("%d parametros atualizados.\n", i);
+    TS_imprime(ts);
+}
+
+tipo_simbolo *TS_busca_subrotina(pilha ts){
+    if (!ts)
+        return NULL;
+        
+    no_pilha n = topo(ts);
+    tipo_simbolo *subrot;
+    
+    while (n){ // acha simb da subrot
+        subrot = (tipo_simbolo *) conteudo_pilha(n);
+        if (subrot->base.categoria == CAT_PROC || subrot->base.categoria == CAT_FUNC){
+            return subrot;
+        }
+        n = proximo_no_pilha(n);
+    }
+    return NULL;
+}
+
+void TS_remove_subrotina(int num_params, pilha ts){
+    int i;
+    for (i = 0; i < num_params+1; i++) {
+        free(desempilha(ts));
+    }
 }

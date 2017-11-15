@@ -9,7 +9,7 @@ typedef struct pilha *pilha;
 //-----------------------------------------------------------------------------
 // (apontador para) nó da pilha encadeada cujo conteúdo é um void *
 
-typedef struct no *no;
+typedef struct no_pilha *no_pilha;
 
 //------------------------------------------------------------------------------
 // devolve o número de nós da pilha p
@@ -20,26 +20,26 @@ unsigned int tamanho_pilha(pilha p);
 // devolve o primeiro nó da pilha p,
 //      ou NULL, se l é vazia
 
-no topo(pilha p);
+no_pilha topo(pilha p);
 
 //------------------------------------------------------------------------------
 // devolve o sucessor do nó n,
 //      ou NULL, se n for o último nó da pilha
 
-no proximo_no(no n);
+no_pilha proximo_no_pilha(no_pilha n);
 
 //------------------------------------------------------------------------------
 // devolve o conteúdo do nó n
 //      ou NULL se n = NULL 
 
-void *conteudo(no n);
+void *conteudo_pilha(no_pilha n);
 //------------------------------------------------------------------------------
 // insere um novo nó na pilha p cujo conteúdo é p
 //
-// devolve o no recém-criado 
+// devolve o no_pilha recém-criado 
 //      ou NULL em caso de falha
 
-no empilha(void *conteudo, pilha p);
+no_pilha empilha(void *conteudo, pilha p);
 
 //---------------------------------------------------------------------------
 // retorna e remove o conteudo do topo da pilha
@@ -68,7 +68,7 @@ pilha constroi_pilha(void);
 
 int destroi_pilha(pilha p, int destroi(void *));
 
-void imprime(pilha p, void conteudo2str(void *, char *));
+void imprime_pilha(pilha p, char *conteudo2str(void *));
 
 
 #endif

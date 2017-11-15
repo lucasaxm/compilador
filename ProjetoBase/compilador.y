@@ -6,10 +6,81 @@
 #include <math.h>
 #include "compilador.h"
 #include "pilha.h"
+#include "fila.h"
+
+FILE* fp=NULL;
+
+void geraCodigo (char* rot, char* comando) {
+  
+  if (fp == NULL) {
+    fp = fopen ("MEPA", "w");
+  }
+  
+  int comando_len = 0;
+  int params_len = 0;
+  char *param;
+  int primeiro=1; // flag pra saber se estou no_fila parametro nos loops
+  
+  no_fila n = inicio(parametros);
+  while (n) { // calcula tamanho da string de params sem \0 no_fila final.
+    param = (char *) conteudo_fila(n);
+    if (primeiro) {
+      params_len+=strlen(param);
+      primeiro=0;
+    }
+    else {
+      params_len+=strlen(", ")+strlen(param);
+    }
+    n = proximo_no_fila(n);
+  }
+  
+  if (params_len > 0)
+    comando_len+=strlen(comando)+strlen(" ")+params_len;
+  else
+    comando_len+=strlen(comando);
+  
+  
+  char comando_completo[comando_len+1];
+  // char params[params_len+1];
+  
+  snprintf(comando_completo, comando_len+1, "%s", comando);
+  
+//   debug_print("%s\n", "Inicio - adiciona parametros.");
+  primeiro=1;
+  n = inicio(parametros);
+  while (n) { // calcula tamanho da string de params sem \0 no_fila final.
+    param = (char *) desenfileira(parametros);
+    if (primeiro) {
+        strncat(comando_completo, " ", comando_len+1);
+        strncat(comando_completo, param, comando_len+1);
+        // debug_print("comando_completo=[%s]\n", comando_completo);
+        primeiro=0;
+    }
+    else {
+        strncat(comando_completo, ", ", comando_len+1);
+        strncat(comando_completo, param, comando_len+1);
+        // debug_print("comando_completo=[%s]\n", comando_completo);
+    }
+    free(param);
+    n = inicio(parametros);
+  }
+//   debug_print("%s\n", "Fim - adiciona parametros.");
+  
+  if ( rot ) {
+    debug_print ("rot+comando_completo:[%s: %s]\n", rot, comando_completo);
+    fprintf(fp, "%s: %s \n", rot, comando_completo); fflush(fp);
+  } else {
+    debug_print ("comando_completo=[%s]\n", comando_completo);
+    fprintf(fp, "     %s\n", comando_completo); fflush(fp);
+  }
+  TS_imprime(tabela_simbolos);
+}
 
 int n_digitos(int n){
     if (n==0)
         return 1;
+    else if (n<0)
+        return floor(log10(abs(n))) + 2;
     else
         return floor(log10(abs(n))) + 1;
 }
@@ -50,9 +121,22 @@ void erro(erros e){
             break;
     }
     fprintf(stderr,"\n# %s\n# Abortando.\n\n",msg);
-    TS_imprime(tabela_simbolos);
     exit(e);
     return;
+}
+
+int enfileira_param_int(int param_int){
+    int param_len = n_digitos(param_int)+1;
+    char *param = (char *) malloc( sizeof(char)*(param_len+1) );
+    snprintf(param, param_len, "%d", param_int);
+    enfileira( (void *) param, parametros);
+}
+
+int enfileira_param_string(char *param_string){
+    int param_len = strlen(param_string);
+    char *param = (char *) malloc( sizeof(char)*(param_len+1) );
+    strncpy(param, param_string, param_len+1);
+    enfileira( (void *) param, parametros);
 }
 
 void valida_tipos_binario(tipos tipo1, tipos tipo2, tipos tipo_esperado){
@@ -77,71 +161,68 @@ char *prox_rotulo(){
 void aloca_mem(){
     if(num_vars <= 0)
         return;
-    char comando[5]="AMEM"; 
-    // aloca variável aux pra converter num_vars pra string
-    char aux[10];
-    // converte num_vars pra string
-    snprintf(aux, sizeof(aux), "%d", num_vars);
-    // aloca memoria para primeiro param
-    parametros[0] = (char *) realloc( (void *) parametros[0], sizeof(char)*(strlen(aux)+1) );
-    parametros[1] = NULL;
-    parametros[2] = NULL;
-    // armazena valor em parametro 1
-    strncpy(parametros[0], aux, sizeof(parametros[0]));
-    debug_print ("num_vars=[%d] comando=[%s] parametros[0]=[%s]\n", num_vars, comando, parametros[0]);
+    
+    enfileira_param_int(num_vars);
+    
+    debug_print("%s\n","parametros:");
+    imprime_fila(parametros, NULL);
+    
     num_vars=0; // zera contador de variáveis
-    geraCodigo (NULL, "AMEM", parametros);
-    TS_imprime(tabela_simbolos);
+    
+    geraCodigo (NULL, "AMEM");
+    
 }
 
-void desaloca_mem(){ 
-    if (TS_tamanho(tabela_simbolos) <= 0)
+void desaloca_mem(){
+    if(TS_tamanho(tabela_simbolos) <= 0)
         return;
-    char comando[5]="DMEM"; 
-    int vs_desalocadas = TS_remove_vs(nivel_lexico, tabela_simbolos);
-    // aloca variável aux pra converter vs_desalocadas pra string
-    char aux[10];
-    // converte vs_desalocadas pra string
-    snprintf(aux, sizeof(aux), "%d", vs_desalocadas);
-    // aloca memoria para primeiro param
-    parametros[0] = (char *) realloc( (void *) parametros[0], sizeof(char)*(strlen(aux)+1) );
-    parametros[1] = NULL;
-    parametros[2] = NULL;
-    // armazena valor em parametros[0]
-    strncpy(parametros[0], aux, sizeof(parametros[0]));
-    debug_print ("vs_desalocadas=[%d] comando=[%s] parametros[0]=[%s]\n", vs_desalocadas, comando, parametros[0]);
-    geraCodigo (NULL, "DMEM", parametros);
-    TS_imprime(tabela_simbolos);
+    
+    enfileira_param_int(TS_remove_vs(nivel_lexico, tabela_simbolos));
+    
+    debug_print("%s\n","parametros:");
+    imprime_fila(parametros, NULL);
+    
+    num_vars=0; // zera contador de variáveis
+    
+    geraCodigo (NULL, "DMEM");
+    
 }
 
 /* Decide tipo de armazenamento */
 void armazena(){
-    int tam_params=10;
-    parametros[0] = (char *) realloc( (void *) parametros[0], sizeof(char)*tam_params ); // tam_params char de memória
-    parametros[1] = (char *) realloc( (void *) parametros[1], sizeof(char)*tam_params ); // tam_params char de memória
-    parametros[2] = NULL;
-    char s_str[1000];
-    TS_simbolo2str(aux_atrib.s, s_str);
+    char *s_str = TS_simbolo2str(aux_atrib.s);
     debug_print("%s\n",s_str);
+    free (s_str);
     switch (aux_atrib.s->base.categoria){
         case CAT_FUNC:
-            snprintf(parametros[0], tam_params, "%d", aux_atrib.s->func.nivel_lexico);
-            snprintf(parametros[1], tam_params, "%d", aux_atrib.s->func.deslocamento);
-            geraCodigo(NULL, "ARMZ", parametros);
+            enfileira_param_int(aux_atrib.s->func.nivel_lexico);
+            
+            enfileira_param_int(aux_atrib.s->func.deslocamento);
+            
+            imprime_fila(parametros, NULL);
+            
+            geraCodigo(NULL, "ARMZ");
+            
             break;
         case CAT_PF:
-            snprintf(parametros[0], tam_params, "%d", aux_atrib.s->pf.nivel_lexico);
-            snprintf(parametros[1], tam_params, "%d", aux_atrib.s->pf.deslocamento);
+            enfileira_param_int(aux_atrib.s->pf.nivel_lexico);
+            
+            enfileira_param_int(aux_atrib.s->pf.deslocamento);
+            
             if (aux_atrib.s->pf.passagem == PASS_VAL){
-                geraCodigo(NULL, "ARMZ", parametros);
+                geraCodigo(NULL, "ARMZ");
             }else{
-                geraCodigo(NULL, "ARMI", parametros);
+                geraCodigo(NULL, "ARMI");
             }
+            
             break;
         case CAT_VS:
-            snprintf(parametros[0], tam_params, "%d", aux_atrib.s->vs.nivel_lexico);
-            snprintf(parametros[1], tam_params, "%d", aux_atrib.s->vs.deslocamento);
-            geraCodigo(NULL, "ARMZ", parametros);
+            enfileira_param_int(aux_atrib.s->vs.nivel_lexico);
+            
+            enfileira_param_int(aux_atrib.s->vs.deslocamento);
+            
+            geraCodigo(NULL, "ARMZ");
+            
             break;
         default:
             debug_print("%s","Erro. categoria invalida.\n");
@@ -151,18 +232,14 @@ void armazena(){
 
 /* Decide tipo de carrega */
 void carrega(tipo_simbolo *simb){
-    int tam_params=10;
-    parametros[0] = (char *) realloc( (void *) parametros[0], sizeof(char)*tam_params ); // tam_params char de memória
-    parametros[1] = (char *) realloc( (void *) parametros[1], sizeof(char)*tam_params ); // tam_params char de memória
-    parametros[2] = NULL;
-    char s_str[1000];
-    TS_simbolo2str(simb, s_str);
+    char *s_str = TS_simbolo2str(simb);
     debug_print("%s\n",s_str);
+    free (s_str);
     switch (simb->base.categoria){
         case CAT_PF:
-            snprintf(parametros[0], tam_params, "%d", simb->pf.nivel_lexico);
-            snprintf(parametros[1], tam_params, "%d", simb->pf.deslocamento);
-            geraCodigo(NULL, "CRVL", parametros);
+            enfileira_param_int(simb->pf.nivel_lexico);
+            enfileira_param_int(simb->pf.deslocamento);
+            geraCodigo(NULL, "CRVL");
 //             if (simb->pf.passagem == valor){
 //                 geraCodigo(NULL, "ARMZ", parametros);
 //             }else{
@@ -170,9 +247,9 @@ void carrega(tipo_simbolo *simb){
 //             }
             break;
         case CAT_VS:
-            snprintf(parametros[0], tam_params, "%d", simb->vs.nivel_lexico);
-            snprintf(parametros[1], tam_params, "%d", simb->vs.deslocamento);
-            geraCodigo(NULL, "CRVL", parametros);
+            enfileira_param_int(simb->vs.nivel_lexico);
+            enfileira_param_int(simb->vs.deslocamento);
+            geraCodigo(NULL, "CRVL");
             break;
         default:
             debug_print("%s","Erro. categoria invalida.\n");
@@ -206,18 +283,14 @@ programa :
         d_rot=0;
         tabela_simbolos = constroi_pilha();
         pilha_rotulos_dsvs = constroi_pilha();
-        parametros[0]=NULL;
-        parametros[1]=NULL;
-        parametros[2]=NULL;
-        geraCodigo (NULL, "INPP", NULL);
+        parametros = constroi_fila();
+        geraCodigo (NULL, "INPP");
     }
     PROGRAM IDENT 
     ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA
     bloco PONTO
     {
-        geraCodigo (NULL, "PARA", NULL);
-        desaloca_mem();
-        TS_imprime(tabela_simbolos);
+        geraCodigo (NULL, "PARA");
     }
 ;
 
@@ -225,24 +298,29 @@ bloco :
     parte_declara_vars
     {
         aloca_mem();
+        
         char *rot_dsvs_aux = prox_rotulo();
-        char *rotulo_dsvs = (char *) malloc( sizeof(char)*( strlen(s_rot)+1 ) );
-        strncpy(rotulo_dsvs, s_rot, strlen(s_rot)+1);
+        
+        char *rotulo_dsvs = (char *) malloc( sizeof(char)*( TAM_ROT+1 ) );
+        strncpy(rotulo_dsvs, s_rot, strlen(s_rot)+1); // empilha copia pois tem free no desempilha
         empilha( (void *) rotulo_dsvs, pilha_rotulos_dsvs);
-        parametros[0] = (char *) realloc( (void *) parametros[0], sizeof(char)*strlen(rotulo_dsvs) );
-        parametros[1]=NULL;
-        parametros[2]=NULL;
-        strncpy(parametros[0], rotulo_dsvs, strlen(s_rot)+1);
-        geraCodigo (NULL, "DSVS", parametros);
+        
+        rotulo_dsvs = (char *) malloc( sizeof(char)*( TAM_ROT+1 ) ); // ponteiro diferente do acima
+        strncpy(rotulo_dsvs, s_rot, strlen(s_rot)+1); // enfileira copia pois tem free no desenfileira
+        enfileira_param_string(rotulo_dsvs); 
+        
+        geraCodigo (NULL, "DSVS");
     }
     parte_declara_subrotinas
     {
         char *rot_dsvs_aux = desempilha(pilha_rotulos_dsvs);
-        geraCodigo(rot_dsvs_aux, "NADA", NULL);
+        geraCodigo(rot_dsvs_aux, "NADA");
         free(rot_dsvs_aux);
     }
-    
     comando_composto 
+    {
+        desaloca_mem();
+    }
 ;
 
 lista_idents: lista_idents VIRGULA IDENT  
@@ -272,14 +350,35 @@ declara_procedimento:
     {
         debug_print("Iniciando declaracao do procedimento '%s'\n", token);
         s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
-        params_aux = (param *) malloc(sizeof(param));
-        s->proc = TS_constroi_simbolo_proc(token, ++nivel_lexico, prox_rotulo(), 0, params_aux);
-        empilha((void *) s, tabela_simbolos);
-        geraCodigo(s->proc.rotulo, "ENPR", NULL);
-        int num_params=0;
+        s->proc = TS_constroi_simbolo_proc(token, ++nivel_lexico, prox_rotulo(), 0, NULL);
+        TS_empilha(s, tabela_simbolos);
+        enfileira_param_int(nivel_lexico);
+        geraCodigo(s->proc.rotulo, "ENPR");
+        num_params_subrot=0;
     }
     params_formais PONTO_E_VIRGULA
+    {
+        TS_atualiza_params(num_params_subrot, tabela_simbolos);
+    }
     bloco
+    {
+        tipo_simbolo *subrot = TS_busca_subrotina(tabela_simbolos);
+        
+        if (!subrot)
+            erro(ERRO_FUNC_NDECL);
+        
+        enfileira_param_int(nivel_lexico);
+        
+        int num_params;
+        
+        if (subrot->base.categoria == CAT_PROC){
+            enfileira_param_int(num_params = subrot->proc.n_params);
+        }
+        else
+            enfileira_param_int(num_params = subrot->func.n_params);
+        geraCodigo(NULL, "RTPR");
+        TS_remove_subrotina(num_params, tabela_simbolos);
+    }
 ;
 
 params_formais:
@@ -323,8 +422,9 @@ id_param:
     { /* insere params na tabela de símbolos */
         s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
         s->pf = TS_constroi_simbolo_pf(token, nivel_lexico, 0, TIPO_UNKNOWN, aux_passagem); // atualizar deslocamento e tipo depois
-        empilha((void *) s, tabela_simbolos);
+        TS_empilha(s, tabela_simbolos);
         conta_tipo++;
+        num_params_subrot++;
     }
 ;
 
@@ -372,7 +472,7 @@ id_var:
     { /* insere vars na tabela de símbolos */
         s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
         s->vs = TS_constroi_simbolo_vs(token, nivel_lexico, num_vars++, TIPO_UNKNOWN);
-        empilha((void *) s, tabela_simbolos);
+        TS_empilha(s, tabela_simbolos);
         conta_tipo++;
     }
 ;
@@ -434,10 +534,10 @@ atrib:
     }
     IDENT ATRIBUICAO expressao
     {
-        char aux_atrib_simb_str[300];
-        TS_simbolo2str(aux_atrib.s, aux_atrib_simb_str);
+        char *aux_atrib_simb_str = TS_simbolo2str(aux_atrib.s);
         debug_print ("Regra: %s | tipo_ident=[%d] tipo_expressao=[%d]\n","atrib", aux_atrib.tipo, $4);
-        debug_print ("Simbolo recipient: %s\n", aux_atrib_simb_str);
+        debug_print ("Simbolo recipiente: %s\n", aux_atrib_simb_str);
+        free (aux_atrib_simb_str);
         if ( $4 != aux_atrib.tipo ) {
             erro(ERRO_ATRIB);
         }
@@ -451,75 +551,75 @@ atrib:
 expressao:
     expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp=[%d]\n","expressao","EXP_SIMP", $1);
+        // debug_print ("Regra: %s | %s | tipo_expsimp=[%d]\n","expressao","EXP_SIMP", $1);
         $$ = $1;
     }
     | expressao_simples IGUAL expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","IGUAL", $1, $3);
+        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","IGUAL", $1, $3);
         if ($1 == $3){
             $$ = TIPO_BOOL;
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "CMIG", NULL);
+        geraCodigo(NULL, "CMIG");
     }
     | expressao_simples DIFERENTE expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","DIFERENTE", $1, $3);
+        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","DIFERENTE", $1, $3);
         if ($1 == $3){
             $$ = TIPO_BOOL;
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "CMDG", NULL);
+        geraCodigo(NULL, "CMDG");
     }
     | expressao_simples MENOR expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR", $1, $3);
+        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = TIPO_BOOL;
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "CMME", NULL);
+        geraCodigo(NULL, "CMME");
     }
     | expressao_simples MENOR_IGUAL expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR_IGUAL", $1, $3);
+        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR_IGUAL", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = TIPO_BOOL;
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "CMEG", NULL);
+        geraCodigo(NULL, "CMEG");
     }
     | expressao_simples MAIOR_IGUAL expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR_IGUAL", $1, $3);
+        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR_IGUAL", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = TIPO_BOOL;
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "CMAG", NULL);
+        geraCodigo(NULL, "CMAG");
     }
     | expressao_simples MAIOR expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR", $1, $3);
+        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = TIPO_BOOL;
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "CMMA", NULL);
+        geraCodigo(NULL, "CMMA");
     }
 ;
 
 expressao_simples:
     MAIS termo
     {
-        debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO POS", $2);
+        // debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO POS", $2);
         if ( ($2 == TIPO_INT) ){
             $$ = $2;
         } else {
@@ -528,7 +628,7 @@ expressao_simples:
     }
     | MENOS termo
     {
-        debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO NEG", $2);
+        // debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO NEG", $2);
         if ( ($2 == TIPO_INT) ){
             $$ = $2;
         } else {
@@ -538,76 +638,76 @@ expressao_simples:
     }
     | termo
     {
-        debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO", $1);
+        // debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO", $1);
         $$ = $1;
     }
     | expressao_simples MAIS termo
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SOMA", $1, $3);
+        // debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SOMA", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "SOMA", NULL);
+        geraCodigo(NULL, "SOMA");
     }
     | expressao_simples MENOS termo
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SUBT", $1, $3);
+        // debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SUBT", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "SUBT", NULL);
+        geraCodigo(NULL, "SUBT");
     }
     | expressao_simples OR termo
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","OR", $1, $3);
+        // debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","OR", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_BOOL) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "CONJ", NULL);
+        geraCodigo(NULL, "CONJ");
     }
 ;
 
 termo:
     fator 
     {
-        debug_print ("Regra: %s | %s | tipo_fator=[%d]\n","termo","FATOR", $1);
+        // debug_print ("Regra: %s | %s | tipo_fator=[%d]\n","termo","FATOR", $1);
         $$ = $1;
     }
     | termo MULT fator 
     {
-        debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","MULT", $1, $3);
+        // debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","MULT", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "MULT", NULL);
+        geraCodigo(NULL, "MULT");
     }
     | termo DIV fator 
     {
-        debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","DIV", $1, $3);
+        // debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","DIV", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "DIVI", NULL);
+        geraCodigo(NULL, "DIVI");
     }
     | termo AND fator 
     {
-        debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","AND", $1, $3);
+        // debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","AND", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_BOOL) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "DISJ", NULL);
+        geraCodigo(NULL, "DISJ");
     }
 ;
 
@@ -615,17 +715,14 @@ fator:
     ABRE_PARENTESES expressao FECHA_PARENTESES
     {
         $$ = $2;
-        debug_print ("Regra: %s | %s\n","fator","(EXPR)");
+        // debug_print ("Regra: %s | %s\n","fator","(EXPR)");
     }
     | NUMERO
     {
         $$ = TIPO_INT;
-        parametros[0] = (char *) realloc( (void *) parametros[0], sizeof(char)*TAM_TOKEN+1 );
-        parametros[1] = NULL;
-        parametros[2] = NULL;
-        strncpy(parametros[0], token, TAM_TOKEN+1);
-        geraCodigo(NULL, "CRCT", parametros);
-        debug_print ("Regra: %s | %s\n","fator","NUMERO");
+        enfileira_param_string(token);
+        geraCodigo(NULL, "CRCT");
+        // debug_print ("Regra: %s | %s\n","fator","NUMERO");
     }
     | var
     {
@@ -642,7 +739,7 @@ fator:
                 break;
         }
         carrega(s);
-        debug_print ("Regra: %s | %s\n","fator","VAR");
+        // debug_print ("Regra: %s | %s\n","fator","VAR");
     }
     | NOT fator
     {
@@ -652,28 +749,22 @@ fator:
         else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        geraCodigo(NULL, "NEGA", NULL);
-        debug_print ("Regra: %s | %s\n","fator","NOT");
+        geraCodigo(NULL, "NEGA");
+        // debug_print ("Regra: %s | %s\n","fator","NOT");
     }
     | T_TRUE
     {
         $$ = TIPO_BOOL;
-        parametros[0] = (char *) realloc( (void *) parametros[0], sizeof(char)*2 );
-        parametros[1] = NULL;
-        parametros[2] = NULL;
-        snprintf(parametros[0], 2, "1");
-        geraCodigo(NULL, "CRCT", parametros);
-        debug_print ("Regra: %s | %s\n","fator","T_TRUE");
+        enfileira_param_int(1);
+        geraCodigo(NULL, "CRCT");
+        // debug_print ("Regra: %s | %s\n","fator","T_TRUE");
     }
     | T_FALSE
     {
         $$ = TIPO_BOOL;
-        parametros[0] = (char *) realloc( (void *) parametros[0], sizeof(char)*2 );
-        parametros[1] = NULL;
-        parametros[2] = NULL;
-        snprintf(parametros[0], 2, "0");
-        geraCodigo(NULL, "CRCT", parametros);
-        debug_print ("Regra: %s | %s\n","fator","T_FALSE");
+        enfileira_param_int(0);
+        geraCodigo(NULL, "CRCT");
+        // debug_print ("Regra: %s | %s\n","fator","T_FALSE");
     }
 
 

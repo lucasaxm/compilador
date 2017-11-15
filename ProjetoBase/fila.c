@@ -4,11 +4,11 @@
 //---------------------------------------------------------------------------
 // nó de fila encadeada cujo conteúdo é um void *
 
-struct no {
+struct no_fila {
 
   void *conteudo;
-  no proximo;
-  // no anterior;
+  no_fila proximo;
+  // no_fila anterior;
 };
 //---------------------------------------------------------------------------
 // fila encadeada
@@ -16,8 +16,8 @@ struct no {
 struct fila {
   
   unsigned int tamanho;
-  no inicio;
-  no final;
+  no_fila inicio;
+  no_fila final;
 };
 //---------------------------------------------------------------------------
 // devolve o número de nós da fila f
@@ -28,29 +28,29 @@ unsigned int tamanho_fila(fila f) { return f->tamanho; }
 // devolve o inicio da fila f,
 //      ou NULL, se l é vazia
 
-no inicio(fila f) { return f->inicio; }
+no_fila inicio(fila f) { return f->inicio; }
 
 //---------------------------------------------------------------------------
 // devolve o inicio da fila f,
 //      ou NULL, se l é vazia
 
-no final(fila f) { return f->final; }
+no_fila final(fila f) { return f->final; }
 
 //---------------------------------------------------------------------------
 // devolve o conteúdo do nó n
 //      ou NULL se n = NULL 
 
-void *conteudo(no n) { return n->conteudo; }
+void *conteudo_fila(no_fila n) { return n->conteudo; }
 
 //---------------------------------------------------------------------------
 // devolve o sucessor do nó n,
 //      ou NULL, se n for o último nó da fila
-no proximo_no(no n) { return n->proximo; }
+no_fila proximo_no_fila(no_fila n) { return n->proximo; }
 
 //---------------------------------------------------------------------------
 // devolve o sucessor do nó n,
 //      ou NULL, se n for o último nó da fila
-// no anterior_no(no n) { return n->anterior; }
+// no_fila anterior_no(no_fila n) { return n->anterior; }
 
 //---------------------------------------------------------------------------
 // cria uma fila vazia e a devolve
@@ -65,7 +65,7 @@ fila constroi_fila(void) {
     return NULL;
 
   f->inicio = NULL;
-  f->final = NULL;
+  f->final = f->inicio;
   f->tamanho = 0;
 
   return f;
@@ -75,7 +75,7 @@ fila constroi_fila(void) {
 // 
 // se destroi != NULL invoca
 //
-//     destroi(conteudo(n)) 
+//     destroi(conteudo_fila(n)) 
 //
 // para cada nó n da fila. 
 //
@@ -84,15 +84,15 @@ fila constroi_fila(void) {
 
 int destroi_fila(fila f, int destroi(void *)) { 
   
-  no n;
+  no_fila n;
   int ok=1;
 
   while ( (n = inicio(f)) ) {
     
-    f->inicio = proximo_no(n);
+    f->inicio = proximo_no_fila(n);
 
     if ( destroi )
-      ok &= destroi(conteudo(n));
+      ok &= destroi(conteudo_fila(n));
 
     free(n);
   }
@@ -104,17 +104,21 @@ int destroi_fila(fila f, int destroi(void *)) {
 //---------------------------------------------------------------------------
 // insere um novo nó na fila f cujo conteúdo é p
 //
-// devolve o no recém-criado 
+// devolve o no_fila recém-criado 
 //      ou NULL em caso de falha
 
-no enfileira(void *conteudo, fila f) { 
+no_fila enfileira(void *conteudo, fila f) { 
 
-  no novo = malloc(sizeof(struct no));
+  no_fila novo = malloc(sizeof(struct no_fila));
 
   if ( ! novo ) 
     return NULL;
-
-  f->final->proximo = novo;
+  
+  if (tamanho_fila(f)==0)
+    f->inicio = novo;
+  else
+    f->final->proximo = novo;
+  
   novo->conteudo = conteudo;
   novo->proximo = NULL;
   ++f->tamanho;
@@ -128,32 +132,35 @@ no enfileira(void *conteudo, fila f) {
 // devolve o inicio da fila
 //      ou NULL em caso de fila vazia
 void *desenfileira(fila f) {
-  no ex_inicio;
+  no_fila ex_inicio;
   void *cont;
   
   if (f->tamanho<=0)
     return NULL;
     
   ex_inicio = inicio(f);
-  f->inicio = proximo_no(ex_inicio);
+  f->inicio = proximo_no_fila(ex_inicio);
   f->tamanho--;
   
-  cont = conteudo(ex_inicio);
+  cont = conteudo_fila(ex_inicio);
   free(ex_inicio);
   
   return cont;
 }
 
-void imprime(fila f, void conteudo2str(void *, char *)) {
-  no n;
+void imprime_fila(fila f, char *conteudo2str(void *)) {
+  no_fila n;
   void *c;
   n = inicio(f);
   char *str_conteudo;
   
   while ( n ) {
-    c = (void *) conteudo(n);
-    conteudo2str(c, str_conteudo);
+    c = (void *) conteudo_fila(n);
+    if (conteudo2str)
+      str_conteudo = conteudo2str(c);
+    else
+      str_conteudo = (char *) c;
     printf("%s\n",str_conteudo);
-    n = proximo_no(n);
+    n = proximo_no_fila(n);
   }
 }

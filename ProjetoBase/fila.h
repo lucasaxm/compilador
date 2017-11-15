@@ -9,7 +9,7 @@ typedef struct fila *fila;
 //-----------------------------------------------------------------------------
 // (apontador para) nó da fila encadeada cujo conteúdo é um void *
 
-typedef struct no *no;
+typedef struct no_fila *no_fila;
 
 //------------------------------------------------------------------------------
 // devolve o número de nós da fila p
@@ -20,28 +20,28 @@ unsigned int tamanho_fila(fila f);
 // devolve o primeiro nó da fila p,
 //      ou NULL, se l é vazia
 
-no inicio(fila f);
+no_fila inicio(fila f);
 
-no final(fila f);
+no_fila final(fila f);
 
 //------------------------------------------------------------------------------
 // devolve o sucessor do nó n,
 //      ou NULL, se n for o último nó da fila
 
-no proximo_no(no n);
+no_fila proximo_no_fila(no_fila n);
 
 //------------------------------------------------------------------------------
 // devolve o conteúdo do nó n
 //      ou NULL se n = NULL 
 
-void *conteudo(no n);
+void *conteudo_fila(no_fila n);
 //------------------------------------------------------------------------------
 // insere um novo nó na fila p cujo conteúdo é p
 //
-// devolve o no recém-criado 
+// devolve o no_fila recém-criado 
 //      ou NULL em caso de falha
 
-no enfileira(void *conteudo, fila f);
+no_fila enfileira(void *conteudo, fila f);
 
 //---------------------------------------------------------------------------
 // retorna e remove o conteudo do topo da fila
@@ -70,7 +70,7 @@ fila constroi_fila(void);
 
 int destroi_fila(fila f, int destroi(void *));
 
-void imprime(fila f, void conteudo2str(void *, char *));
+void imprime_fila(fila f, char *conteudo2str(void *));
 
 
 
