@@ -22,7 +22,7 @@ simbolo_vs TS_constroi_simbolo_vs(char *identificador, int nivel_lexico, int des
     return vs;
 }
 
-simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, char *rotulo, int n_params, fila params){
+simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, char *rotulo, int n_params, pilha params){
     simbolo_proc proc;
     
     proc.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
@@ -40,7 +40,7 @@ simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, cha
     }
     else {
         proc.n_params = 0;
-        proc.params = constroi_fila();
+        proc.params = constroi_pilha();
     }
     
     char *simb_str = TS_simbolo2str(&proc);
@@ -73,7 +73,7 @@ simbolo_pf TS_constroi_simbolo_pf(char *identificador, int nivel_lexico, int des
     return pf;
 }
 
-simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, char *rotulo, int n_params, fila params){
+simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, char *rotulo, int n_params, pilha params){
     simbolo_func func;
     
     func.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
@@ -95,7 +95,7 @@ simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int
     }
     else {
         func.n_params = 0;
-        func.params = constroi_fila();
+        func.params = constroi_pilha();
     }
     
     char *simb_str = TS_simbolo2str(&func);
@@ -128,10 +128,10 @@ void TS_imprime(pilha ts){
     imprime_pilha(ts,TS_simbolo2str);
 }
 
-char *TS_params2str(fila params){
+char *TS_params2str(pilha params){
     
     int param_str_len = strlen("{0, 0}");
-    int params_str_len = param_str_len*(tamanho_fila(params));
+    int params_str_len = param_str_len*(tamanho_pilha(params));
     
     char param_str[param_str_len+1];
     char *params_str = malloc (sizeof(char)*(params_str_len+1));
@@ -140,12 +140,12 @@ char *TS_params2str(fila params){
     
     params_str[0]='\0';
     
-    no_fila n = inicio(params);
+    no_pilha n = topo(params);
     while (n) {
-        p = (param *) conteudo_fila(n);
+        p = (param *) conteudo_pilha(n);
         snprintf(param_str, params_str_len+1, "{%d, %d}", p->tipo, p->passagem);
         strncat(params_str, param_str, params_str_len+1);
-        n = proximo_no_fila(n);
+        n = proximo_no_pilha(n);
     }
     return params_str;
 }
@@ -337,22 +337,38 @@ int TS_tamanho(pilha ts){
 
 int TS_remove_vs(int nivel_lexico, pilha ts){
     no_pilha n = topo(ts);
+    int removidos=0;
     int i=0;
     tipo_simbolo *s;
-    
+    char *s_str;
+    debug_print("Removendo VS de nivel lexico %d da tabela de simbolos.\n", nivel_lexico);
     while (n){
         s = (tipo_simbolo *) conteudo_pilha(n);
-        if (s->base.categoria == CAT_VS){
-            free (desempilha(ts));
-            i++;
+        if ( (s->base.categoria == CAT_VS) && (s->vs.nivel_lexico==nivel_lexico) ){
+            
+            s_str = TS_simbolo2str(s);
+            debug_print("Simbolo [%s] indice %d sera removido.\n",s_str, i);
+            free (s_str);
+            
+            n = proximo_no_pilha(n);
+            tipo_simbolo *s_removido = remove_indice_pilha(i,ts);
+            
+            s_str = TS_simbolo2str(s_removido);
+            debug_print("Simbolo [%s] removido da tabela de simbolos.\n",s_str);
+            free (s_str);
+            
+            free (s_removido);
+            i--;
+            removidos++;
         }
         else {
-            break;
+            n = proximo_no_pilha(n);
         }
-        n = topo(ts);
+        i++;
     }
+    debug_print("%d simbolos removidos.\n", i);
     
-    return i;
+    return removidos;
 }
 
 void TS_empilha(tipo_simbolo *s, pilha ts){
@@ -378,14 +394,16 @@ void TS_atualiza_params(int num_params, pilha ts){
             p->tipo = s->pf.tipo;
             p->passagem = s->pf.passagem;
             if (subrot->base.categoria == CAT_PROC){
-                enfileira( (void *) p, subrot->proc.params );
+                empilha( (void *) p, subrot->proc.params );
                 subrot->proc.n_params++;
             }
             else if (subrot->base.categoria == CAT_FUNC){
-                enfileira( (void *) p, subrot->func.params );  
+                empilha( (void *) p, subrot->func.params );
                 subrot->func.n_params++;
             }
-            
+            char *s_str = TS_simbolo2str(s);
+            debug_print("Simbolo [%s] enfileirado.\n",s_str);
+            free (s_str);
             i++;
         }
         else {
@@ -414,9 +432,9 @@ tipo_simbolo *TS_busca_subrotina(pilha ts){
     return NULL;
 }
 
-void TS_remove_subrotina(int num_params, pilha ts){
+void TS_remove_params_subrotina(int num_params, pilha ts){
     int i;
-    for (i = 0; i < num_params+1; i++) {
+    for (i = 0; i < num_params; i++) {
         free(desempilha(ts));
     }
 }

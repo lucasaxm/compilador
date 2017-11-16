@@ -32,7 +32,7 @@ no_pilha topo(pilha p) { return p->topo; }
 // devolve o conteúdo do nó n
 //      ou NULL se n = NULL 
 
-void *conteudo_pilha(no_pilha n) { return n->conteudo; }
+void *conteudo_pilha(no_pilha n) { return n ? n->conteudo : NULL; }
 
 //---------------------------------------------------------------------------
 // devolve o sucessor do nó n,
@@ -145,4 +145,42 @@ void imprime_pilha(pilha p, char *conteudo2str(void *)) {
     printf("%s\n",str_conteudo);
     n = proximo_no_pilha(n);
   }
+}
+
+void *busca_indice_pilha(int indice, pilha p){
+  int i;
+  if ( (!p) || (tamanho_pilha(p)<=0) ) return NULL;
+  
+  no_pilha n = topo(p);
+  for (i = 0; (i < indice) && n; i++) {
+    n = proximo_no_pilha(n);
+  }
+  if (n)
+    return conteudo_pilha(n);
+  else
+    return NULL;
+}
+
+void *remove_indice_pilha(int indice, pilha p){
+  if (indice==0)
+    return desempilha(p);
+    
+  int i;
+  void *c;
+  
+  no_pilha n_anterior = topo(p);
+  no_pilha n = proximo_no_pilha(n_anterior);
+  
+  for (i = 1; (i < indice) && n; i++) {
+    n_anterior = n;
+    n = proximo_no_pilha(n_anterior);
+  }
+  if (!n)
+    return NULL;
+    
+  c = conteudo_pilha(n);
+  n_anterior->proximo = proximo_no_pilha(n);
+  free(n);
+  
+  return c;
 }

@@ -50,9 +50,9 @@ typedef struct simbolo_proc {
   categorias categoria;
   char *identificador;
   int nivel_lexico;
-  char rotulo[4];
+  char rotulo[TAM_ROT+1];
   int n_params;
-  fila params;
+  pilha params;
 } simbolo_proc;
 
 typedef struct simbolo_pf {
@@ -70,9 +70,9 @@ typedef struct simbolo_func {
   int nivel_lexico;
   int deslocamento;
   tipos tipo;
-  char rotulo[4];
+  char rotulo[TAM_ROT+1];
   int n_params;
-  fila params;
+  pilha params;
 } simbolo_func;
 
 typedef struct simbolo_rot {
@@ -93,15 +93,17 @@ typedef union simbolo {
 
 simbolo_vs TS_constroi_simbolo_vs(char *identificador, int nivel_lexico, int deslocamento, tipos tipo);
 
-simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, char *rotulo, int n_params, fila params);
+simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, char *rotulo, int n_params, pilha params);
 
 simbolo_pf TS_constroi_simbolo_pf(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, tipos_passagem passagem);
 
-simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, char *rotulo, int n_params, fila params);
+simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, char *rotulo, int n_params, pilha params);
 
 simbolo_rot TS_constroi_simbolo_rot(char *identificador, int nivel_lexico, char *rotulo);
 
 void TS_imprime(pilha ts);
+
+char *TS_params2str(pilha params);
 
 char *TS_simbolo2str(void *s);
 
@@ -119,4 +121,4 @@ void TS_atualiza_params(int num_params, pilha ts);
 
 tipo_simbolo *TS_busca_subrotina(pilha ts);
 
-void TS_remove_subrotina(int num_params, pilha ts);
+void TS_remove_params_subrotina(int num_params, pilha ts);

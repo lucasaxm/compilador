@@ -235,21 +235,44 @@ void carrega(tipo_simbolo *simb){
     char *s_str = TS_simbolo2str(simb);
     debug_print("%s\n",s_str);
     free (s_str);
+    if (chamando_subrot){
+        param *p = busca_indice_fila(num_params_subrot, subrot->proc.params);
+        if (!p) {
+            erro(ERRO_NPARAM);
+        }
+    }
     switch (simb->base.categoria){
         case CAT_PF:
             enfileira_param_int(simb->pf.nivel_lexico);
             enfileira_param_int(simb->pf.deslocamento);
-            geraCodigo(NULL, "CRVL");
-//             if (simb->pf.passagem == valor){
-//                 geraCodigo(NULL, "ARMZ", parametros);
-//             }else{
-//                 geraCodigo(NULL, "ARMI", parametros);
-//             }
+            if (simb->pf.passagem == PASS_VAL){ // PF VLR
+                if (p->passagem == PASS_VAL)
+                    geraCodigo(NULL, "CRVL");
+                else if (p->passagem == PASS_REF)
+                    geraCodigo(NULL, "CREN");
+            }
+            else if (simb->pf.passagem == PASS_REF){ // PF REF
+                if (p->passagem == PASS_VAL)
+                    geraCodigo(NULL, "CRVI");
+                else if (p->passagem == PASS_REF)
+                    geraCodigo(NULL, "CRVL");
+            }
             break;
         case CAT_VS:
             enfileira_param_int(simb->vs.nivel_lexico);
             enfileira_param_int(simb->vs.deslocamento);
-            geraCodigo(NULL, "CRVL");
+            if (simb->vs.passagem == PASS_VAL){ // VS VLR
+                if (p->passagem == PASS_VAL)
+                    geraCodigo(NULL, "CRVL");
+                else if (p->passagem == PASS_REF)
+                    geraCodigo(NULL, "CREN");
+            }
+            else if (simb->vs.passagem == PASS_REF){ // VS REF
+                if (p->passagem == PASS_VAL)
+                    geraCodigo(NULL, "CRVI");
+                else if (p->passagem == PASS_REF)
+                    geraCodigo(NULL, "CRVL");
+            }
             break;
         default:
             debug_print("%s","Erro. categoria invalida.\n");
@@ -355,6 +378,7 @@ declara_procedimento:
         enfileira_param_int(nivel_lexico);
         geraCodigo(s->proc.rotulo, "ENPR");
         num_params_subrot=0;
+        chamando_subrot=0;
     }
     params_formais PONTO_E_VIRGULA
     {
@@ -377,7 +401,7 @@ declara_procedimento:
         else
             enfileira_param_int(num_params = subrot->func.n_params);
         geraCodigo(NULL, "RTPR");
-        TS_remove_subrotina(num_params, tabela_simbolos);
+        TS_remove_params_subrotina(num_params, tabela_simbolos);
     }
 ;
 
@@ -421,7 +445,7 @@ id_param:
     IDENT
     { /* insere params na tabela de símbolos */
         s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
-        s->pf = TS_constroi_simbolo_pf(token, nivel_lexico, 0, TIPO_UNKNOWN, aux_passagem); // atualizar deslocamento e tipo depois
+        s->pf = TS_constroi_simbolo_pf(token, nivel_lexico, 0, TIPO_UNKNOWN, aux_passagem); // atualiza deslocamento e tipo depois
         TS_empilha(s, tabela_simbolos);
         conta_tipo++;
         num_params_subrot++;
@@ -508,9 +532,57 @@ comando:
     | comando_sem_rotulo
 ;
 
-comando_sem_rotulo:
+comando_sem_rotulo: IDENT comando_sem_rotulo2
+;
+
+comando_sem_rotulo2:
     atrib
+    | ch_proc
+;
+
+ch_proc:
+    {
+        chamando_subrot=1;
+        num_params_subrot=0;
+        subrot = TS_busca(token, tabela_simbolos);
+        if ((!subrot) || (subrot->base.categoria!=CAT_PROC))
+            erro(ERRO_PROC_NDECL);
+    }
+    passa_params
+    {
+        chamando_subrot=0;
+    }
+;
+
+passa_params:
+    ABRE_PARENTESES lista_params FECHA_PARENTESES
+    | ABRE_PARENTESES FECHA_PARENTESES
     |
+;
+
+lista_params:
+    lista_params
+    VIRGULA
+    {
+        flag_var=0;
+    }
+    param
+    | param
+;
+
+param:
+    expressao
+    {
+        num_params_subrot++;
+        if(num_params_subrot > subrot->proc.n_params)
+            erro(ERRO_NPARAM);
+        param *p = busca_indice_fila(num_params_subrot, subrot->proc.params);
+        if (p->passagem == PASS_REF) {
+            if (!flag_var) {
+                erro(ERRO_VS_NDECL);
+            }
+        }
+    }
 ;
 
 atrib:
@@ -532,13 +604,13 @@ atrib:
                 break;
         }
     }
-    IDENT ATRIBUICAO expressao
+    ATRIBUICAO expressao
     {
         char *aux_atrib_simb_str = TS_simbolo2str(aux_atrib.s);
-        debug_print ("Regra: %s | tipo_ident=[%d] tipo_expressao=[%d]\n","atrib", aux_atrib.tipo, $4);
+        debug_print ("Regra: %s | tipo_ident=[%d] tipo_expressao=[%d]\n","atrib", aux_atrib.tipo, $3);
         debug_print ("Simbolo recipiente: %s\n", aux_atrib_simb_str);
         free (aux_atrib_simb_str);
-        if ( $4 != aux_atrib.tipo ) {
+        if ( $3 != aux_atrib.tipo ) {
             erro(ERRO_ATRIB);
         }
         armazena();
@@ -563,6 +635,7 @@ expressao:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "CMIG");
+        flag_var=0;
     }
     | expressao_simples DIFERENTE expressao_simples
     {
@@ -573,6 +646,7 @@ expressao:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "CMDG");
+        flag_var=0;
     }
     | expressao_simples MENOR expressao_simples
     {
@@ -583,6 +657,7 @@ expressao:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "CMME");
+        flag_var=0;
     }
     | expressao_simples MENOR_IGUAL expressao_simples
     {
@@ -593,6 +668,7 @@ expressao:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "CMEG");
+        flag_var=0;
     }
     | expressao_simples MAIOR_IGUAL expressao_simples
     {
@@ -603,6 +679,7 @@ expressao:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "CMAG");
+        flag_var=0;
     }
     | expressao_simples MAIOR expressao_simples
     {
@@ -613,6 +690,7 @@ expressao:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "CMMA");
+        flag_var=0;
     }
 ;
 
@@ -635,6 +713,7 @@ expressao_simples:
             erro(ERRO_TINCOMPATIVEL);
         }
         // TODO: PENSAR NO GERACODIGO
+        flag_var=0;
     }
     | termo
     {
@@ -650,6 +729,7 @@ expressao_simples:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "SOMA");
+        flag_var=0;
     }
     | expressao_simples MENOS termo
     {
@@ -660,6 +740,7 @@ expressao_simples:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "SUBT");
+        flag_var=0;
     }
     | expressao_simples OR termo
     {
@@ -670,6 +751,7 @@ expressao_simples:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "CONJ");
+        flag_var=0;
     }
 ;
 
@@ -688,6 +770,7 @@ termo:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "MULT");
+        flag_var=0;
     }
     | termo DIV fator 
     {
@@ -698,6 +781,7 @@ termo:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "DIVI");
+        flag_var=0;
     }
     | termo AND fator 
     {
@@ -708,6 +792,7 @@ termo:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "DISJ");
+        flag_var=0;
     }
 ;
 
@@ -722,6 +807,7 @@ fator:
         $$ = TIPO_INT;
         enfileira_param_string(token);
         geraCodigo(NULL, "CRCT");
+        flag_var=0;
         // debug_print ("Regra: %s | %s\n","fator","NUMERO");
     }
     | var
@@ -738,6 +824,7 @@ fator:
                 $$ = s->vs.tipo;
                 break;
         }
+        flag_var=1;
         carrega(s);
         // debug_print ("Regra: %s | %s\n","fator","VAR");
     }
@@ -750,6 +837,7 @@ fator:
             erro(ERRO_TINCOMPATIVEL);
         }
         geraCodigo(NULL, "NEGA");
+        flag_var=0;
         // debug_print ("Regra: %s | %s\n","fator","NOT");
     }
     | T_TRUE
@@ -757,6 +845,7 @@ fator:
         $$ = TIPO_BOOL;
         enfileira_param_int(1);
         geraCodigo(NULL, "CRCT");
+        flag_var=0;
         // debug_print ("Regra: %s | %s\n","fator","T_TRUE");
     }
     | T_FALSE
@@ -764,6 +853,7 @@ fator:
         $$ = TIPO_BOOL;
         enfileira_param_int(0);
         geraCodigo(NULL, "CRCT");
+        flag_var=0;
         // debug_print ("Regra: %s | %s\n","fator","T_FALSE");
     }
 

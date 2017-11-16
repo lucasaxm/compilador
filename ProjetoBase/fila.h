@@ -72,6 +72,6 @@ int destroi_fila(fila f, int destroi(void *));
 
 void imprime_fila(fila f, char *conteudo2str(void *));
 
-
+void *busca_indice_fila(int indice, fila f);
 
 #endif
