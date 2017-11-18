@@ -90,34 +90,43 @@ void erro(erros e){
     char msg[msg_size];
     switch (e){
         case ERRO_ATRIB:
-            snprintf(msg, msg_size, "Recipiente inválido para atribuição.");
+            snprintf(msg, msg_size, "Linha %d | Recipiente inválido para atribuição.", nl);
             break;
         case ERRO_TPARAM:
-            snprintf(msg, msg_size, "Tipo do parâmetro não compatível com assinatura");
+            snprintf(msg, msg_size, "Linha %d | Tipo do parâmetro não compatível com assinatura.", nl);
             break;
         case ERRO_NPARAM:
-            snprintf(msg, msg_size, "Número de parâmetros não coincide com assinatura.");
+            snprintf(msg, msg_size, "Linha %d | Número de parâmetros não coincide com assinatura.", nl);
             break;
         case ERRO_IDENT_DECL:
-            snprintf(msg, msg_size, "Identificador já declarado.");
+            snprintf(msg, msg_size, "Linha %d | Identificador já declarado.", nl);
             break;
         case ERRO_VS_NDECL:
-            snprintf(msg, msg_size, "Variável '%s' não declarada.", token); 
+            snprintf(msg, msg_size, "Linha %d | Variável '%s' não declarada.", nl, token); 
             break;
         case ERRO_PROC_NDECL:
-            snprintf(msg, msg_size, "Procedimento não declarado.");
+            snprintf(msg, msg_size, "Linha %d | Procedimento não declarado.", nl);
             break;
         case ERRO_FUNC_NDECL:
-            snprintf(msg, msg_size, "Função não declarada.");
+            snprintf(msg, msg_size, "Linha %d | Função não declarada.", nl);
             break;
         case ERRO_ROT_NDECL:
-            snprintf(msg, msg_size, "Rótulo não declarado.");
+            snprintf(msg, msg_size, "Linha %d | Rótulo não declarado.", nl);
             break;
         case ERRO_TINCOMPATIVEL:
-            snprintf(msg, msg_size, "Operação com tipos incompatíveis.");
+            snprintf(msg, msg_size, "Linha %d | Operação com tipos incompatíveis.", nl);
+            break;
+        case ERRO_PARAMREF:
+            snprintf(msg, msg_size, "Linha %d | Parametro passado por referencia deve ser uma variavel.", nl);
+            break;
+        case ERRO_DESCONHECIDO:
+            snprintf(msg, msg_size, "Linha %d | Erro desconhecido.", nl);
+            break;
+        case ERRO_IDENT_DUPLICADO:
+            snprintf(msg, msg_size, "Linha %d | Identificador duplicado.", nl);
             break;
         default:
-            snprintf(msg, msg_size, "Erro desconhecido.");
+            snprintf(msg, msg_size, "Linha %d | Erro desconhecido.", nl);
             break;
     }
     fprintf(stderr,"\n# %s\n# Abortando.\n\n",msg);
@@ -177,7 +186,10 @@ void desaloca_mem(){
     if(TS_tamanho(tabela_simbolos) <= 0)
         return;
     
-    enfileira_param_int(TS_remove_vs(nivel_lexico, tabela_simbolos));
+    int removidos = TS_remove_vs(nivel_lexico, tabela_simbolos);
+    if (removidos==0) return;
+    
+    enfileira_param_int(removidos);
     
     debug_print("%s\n","parametros:");
     imprime_fila(parametros, NULL);
@@ -235,47 +247,57 @@ void carrega(tipo_simbolo *simb){
     char *s_str = TS_simbolo2str(simb);
     debug_print("%s\n",s_str);
     free (s_str);
+    param *p;
+    tipos_passagem pass;
     if (chamando_subrot){
-        param *p = busca_indice_fila(num_params_subrot, subrot->proc.params);
+        tipo_simbolo *subrot = conteudo_pilha(topo(pilha_cham_subrot));
+        if (!subrot)
+            erro(ERRO_FUNC_NDECL);
+        if (subrot->base.categoria == CAT_PROC)
+            p = busca_indice_pilha(num_params_subrot, subrot->proc.params);
+        else
+            p = busca_indice_pilha(num_params_subrot, subrot->func.params);
+            
         if (!p) {
             erro(ERRO_NPARAM);
         }
+        
+        pass = p->passagem;
+        debug_print("Passagem do param por %s\n", pass == PASS_VAL ? "valor" : "referencia");
+    }
+    else {
+        pass = PASS_VAL;
     }
     switch (simb->base.categoria){
         case CAT_PF:
             enfileira_param_int(simb->pf.nivel_lexico);
             enfileira_param_int(simb->pf.deslocamento);
             if (simb->pf.passagem == PASS_VAL){ // PF VLR
-                if (p->passagem == PASS_VAL)
+                debug_print("%s\n","Simbolo eh PF VLR");
+                if (pass == PASS_VAL)
                     geraCodigo(NULL, "CRVL");
-                else if (p->passagem == PASS_REF)
+                else if (pass == PASS_REF)
                     geraCodigo(NULL, "CREN");
             }
             else if (simb->pf.passagem == PASS_REF){ // PF REF
-                if (p->passagem == PASS_VAL)
+                debug_print("%s\n","Simbolo eh PF REF");
+                if (pass == PASS_VAL)
                     geraCodigo(NULL, "CRVI");
-                else if (p->passagem == PASS_REF)
+                else if (pass == PASS_REF)
                     geraCodigo(NULL, "CRVL");
             }
             break;
         case CAT_VS:
+            debug_print("%s\n","Simbolo eh VS");
             enfileira_param_int(simb->vs.nivel_lexico);
             enfileira_param_int(simb->vs.deslocamento);
-            if (simb->vs.passagem == PASS_VAL){ // VS VLR
-                if (p->passagem == PASS_VAL)
-                    geraCodigo(NULL, "CRVL");
-                else if (p->passagem == PASS_REF)
-                    geraCodigo(NULL, "CREN");
-            }
-            else if (simb->vs.passagem == PASS_REF){ // VS REF
-                if (p->passagem == PASS_VAL)
-                    geraCodigo(NULL, "CRVI");
-                else if (p->passagem == PASS_REF)
-                    geraCodigo(NULL, "CRVL");
-            }
+            if (pass == PASS_VAL)
+                geraCodigo(NULL, "CRVL");
+            else if (pass == PASS_REF)
+                geraCodigo(NULL, "CREN");
             break;
         default:
-            debug_print("%s","Erro. categoria invalida.\n");
+            erro(ERRO_TPARAM);
             break;
     }
 }
@@ -295,6 +317,8 @@ void carrega(tipo_simbolo *simb){
 
 %type<tipo> fator termo expressao_simples expressao
 
+%define parse.error verbose
+
 %%
 
 /* FLUXO PRINCIPAL */
@@ -306,6 +330,8 @@ programa :
         d_rot=0;
         tabela_simbolos = constroi_pilha();
         pilha_rotulos_dsvs = constroi_pilha();
+        pilha_decl_subrot = constroi_pilha();
+        pilha_cham_subrot = constroi_pilha();
         parametros = constroi_fila();
         geraCodigo (NULL, "INPP");
     }
@@ -375,6 +401,7 @@ declara_procedimento:
         s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
         s->proc = TS_constroi_simbolo_proc(token, ++nivel_lexico, prox_rotulo(), 0, NULL);
         TS_empilha(s, tabela_simbolos);
+        empilha(s, pilha_decl_subrot);
         enfileira_param_int(nivel_lexico);
         geraCodigo(s->proc.rotulo, "ENPR");
         num_params_subrot=0;
@@ -386,11 +413,12 @@ declara_procedimento:
     }
     bloco
     {
-        tipo_simbolo *subrot = TS_busca_subrotina(tabela_simbolos);
+        tipo_simbolo *subrot = desempilha(pilha_decl_subrot);
         
         if (!subrot)
             erro(ERRO_FUNC_NDECL);
-        
+            
+        empilha(subrot, pilha_decl_subrot);
         enfileira_param_int(nivel_lexico);
         
         int num_params;
@@ -401,7 +429,8 @@ declara_procedimento:
         else
             enfileira_param_int(num_params = subrot->func.n_params);
         geraCodigo(NULL, "RTPR");
-        TS_remove_params_subrotina(num_params, tabela_simbolos);
+        TS_remove_rtpr(desempilha(pilha_decl_subrot), tabela_simbolos);
+        nivel_lexico--;
     }
 ;
 
@@ -453,6 +482,7 @@ id_param:
 ;
 
 declara_funcao:
+    // TODO: PROXIMO PASSO
 ;
 
 /* DECLARACAO DE VARS */
@@ -530,9 +560,15 @@ comando:
         has_label=0;
     }
     | comando_sem_rotulo
+    |
 ;
 
-comando_sem_rotulo: IDENT comando_sem_rotulo2
+comando_sem_rotulo:
+    IDENT
+    {
+        strncpy(ident, token, TAM_TOKEN);
+    }
+    comando_sem_rotulo2
 ;
 
 comando_sem_rotulo2:
@@ -544,13 +580,23 @@ ch_proc:
     {
         chamando_subrot=1;
         num_params_subrot=0;
-        subrot = TS_busca(token, tabela_simbolos);
-        if ((!subrot) || (subrot->base.categoria!=CAT_PROC))
+        tipo_simbolo *subrot = TS_busca_procedimento(ident, tabela_simbolos);
+        if (!subrot)
             erro(ERRO_PROC_NDECL);
+        empilha(subrot, pilha_cham_subrot);
+        char *subrot_srt = TS_simbolo2str(subrot);
+        debug_print("Chamando subrotina [%s]\n", subrot_srt);
+        free (subrot_srt);
     }
     passa_params
     {
+        tipo_simbolo *subrot = desempilha(pilha_cham_subrot);
+        if(num_params_subrot < subrot->proc.n_params)
+            erro(ERRO_NPARAM);
         chamando_subrot=0;
+        enfileira_param_string(subrot->proc.rotulo);
+        enfileira_param_int(nivel_lexico);
+        geraCodigo(NULL, "CHPR");
     }
 ;
 
@@ -573,22 +619,24 @@ lista_params:
 param:
     expressao
     {
-        num_params_subrot++;
+        tipo_simbolo *subrot = conteudo_pilha(topo(pilha_cham_subrot));
         if(num_params_subrot > subrot->proc.n_params)
             erro(ERRO_NPARAM);
-        param *p = busca_indice_fila(num_params_subrot, subrot->proc.params);
-        if (p->passagem == PASS_REF) {
-            if (!flag_var) {
-                erro(ERRO_VS_NDECL);
-            }
+        param *p = busca_indice_pilha(num_params_subrot, subrot->proc.params);
+        if ( (p->passagem == PASS_REF) && (!flag_var) ) { // se eh pass por ref e encontrou operacao
+            erro(ERRO_PARAMREF);
         }
+        if ( $1 != p->tipo ) { // se tipo do parametro != tipo da operacao
+            erro(ERRO_TPARAM);
+        }
+        num_params_subrot++;
     }
 ;
 
 atrib:
     {
-        debug_print("begin atribuicao. token=[%s]\n", token);
-        aux_atrib.s = TS_busca(token, tabela_simbolos);
+        debug_print("begin atribuicao. ident=[%s]\n", ident);
+        aux_atrib.s = TS_busca(ident, tabela_simbolos);
         if (aux_atrib.s == NULL) {
             erro(ERRO_VS_NDECL);
         }

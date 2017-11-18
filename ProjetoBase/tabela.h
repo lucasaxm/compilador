@@ -12,7 +12,10 @@ typedef enum erros {
     ERRO_PROC_NDECL,
     ERRO_FUNC_NDECL,
     ERRO_ROT_NDECL,
-    ERRO_TINCOMPATIVEL
+    ERRO_TINCOMPATIVEL,
+    ERRO_PARAMREF,
+    ERRO_DESCONHECIDO,
+    ERRO_IDENT_DUPLICADO
 } erros;
 
 typedef enum categorias {
@@ -111,6 +114,8 @@ int TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts);
 
 tipo_simbolo *TS_busca(char *identificador, pilha ts);
 
+tipo_simbolo *TS_busca_procedimento(char *identificador, pilha ts);
+
 int TS_tamanho(pilha ts);
 
 int TS_remove_vs(int nivel_lexico, pilha ts);
@@ -121,4 +126,4 @@ void TS_atualiza_params(int num_params, pilha ts);
 
 tipo_simbolo *TS_busca_subrotina(pilha ts);
 
-void TS_remove_params_subrotina(int num_params, pilha ts);
+void TS_remove_rtpr(tipo_simbolo *s, pilha ts);

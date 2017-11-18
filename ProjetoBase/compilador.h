@@ -33,27 +33,12 @@ extern int nivel_lexico;
 extern int desloc;
 extern int nl;
 
-typedef enum aux_expr_enum {
-    EXPR_SIMB, EXPR_CONST, EXPR_OP
-} tipo_expr;
-
 typedef struct aux_atrib {
     tipo_simbolo *s;
     tipos tipo;
 } taux_atrib;
 
-typedef struct aux_expr {
-    union {
-        tipo_simbolo *s;
-        int constante;
-        char *operacao;
-    };
-    tipo_expr tipo;
-} aux_expr;
-
-
 char token[TAM_TOKEN];
-char token_old[TAM_TOKEN];
 char ident[TAM_TOKEN]; // var aux para armazenar token
 
 int num_vars;   // numero de vars de subrot
@@ -71,8 +56,7 @@ char *main_rot; // rotulo que representa programa principal
 int has_label;  // flag para indicar que proximo comando possui um label
 int conta_tipo; // contador de simbolos com mesmo tipo que devem ser atualizados
 fila parametros; // fila de parametros usada no geraCodigo
-tipo_simbolo *subrot;    // simbolo usado em chamadas de subrotinas
+pilha pilha_decl_subrot;    // pilha de decl de subrotinas, topo=subrotina mais interna
+pilha pilha_cham_subrot;    // pilha de chamadas de subrotinas, topo=ultima subrot chamada
 int chamando_subrot; // flag que indica se estou em uma chamada de subrot
 int flag_var; // flag que indica se expressao eh uma variavel
-int sou_param_var; // flag que indica que var nao faz participa de operacoes
-pilha pilha_expressao;

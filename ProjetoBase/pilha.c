@@ -20,13 +20,13 @@ struct pilha {
 //---------------------------------------------------------------------------
 // devolve o número de nós da pilha p
 
-unsigned int tamanho_pilha(pilha p) { return p->tamanho; }
+unsigned int tamanho_pilha(pilha p) { return p ? p->tamanho : 0; }
 
 //---------------------------------------------------------------------------
 // devolve o topo da pilha p,
 //      ou NULL, se l é vazia
 
-no_pilha topo(pilha p) { return p->topo; }
+no_pilha topo(pilha p) { return p ? p->topo : NULL; }
 
 //---------------------------------------------------------------------------
 // devolve o conteúdo do nó n
@@ -38,7 +38,7 @@ void *conteudo_pilha(no_pilha n) { return n ? n->conteudo : NULL; }
 // devolve o sucessor do nó n,
 //      ou NULL, se n for o último nó da pilha
 
-no_pilha proximo_no_pilha(no_pilha n) { return n->proximo; }
+no_pilha proximo_no_pilha(no_pilha n) { return n ? n->proximo : NULL; }
 
 //---------------------------------------------------------------------------
 // cria uma pilha vazia e a devolve
