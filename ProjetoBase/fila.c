@@ -164,3 +164,17 @@ void imprime_fila(fila f, char *conteudo2str(void *)) {
     n = proximo_no_fila(n);
   }
 }
+
+void *busca_indice_fila(int indice, fila f){
+  int i;
+  if ( (!f) || (tamanho_fila(f)<=0) ) return NULL;
+  
+  no_fila n = inicio(f);
+  for (i = 0; (i < indice) && n; i++) {
+    n = proximo_no_fila(n);
+  }
+  if (n)
+    return conteudo_fila(n);
+  else
+    return NULL;
+}

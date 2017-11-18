@@ -70,5 +70,8 @@ int destroi_pilha(pilha p, int destroi(void *));
 
 void imprime_pilha(pilha p, char *conteudo2str(void *));
 
+void *busca_indice_pilha(int indice, pilha p);
 
+void *remove_indice_pilha(int indice, pilha p);
+    
 #endif

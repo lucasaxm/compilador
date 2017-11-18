@@ -22,7 +22,7 @@ simbolo_vs TS_constroi_simbolo_vs(char *identificador, int nivel_lexico, int des
     return vs;
 }
 
-simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, char *rotulo, int n_params, fila params){
+simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, char *rotulo, int n_params, pilha params){
     simbolo_proc proc;
     
     proc.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
@@ -40,7 +40,7 @@ simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, cha
     }
     else {
         proc.n_params = 0;
-        proc.params = constroi_fila();
+        proc.params = constroi_pilha();
     }
     
     char *simb_str = TS_simbolo2str(&proc);
@@ -73,7 +73,7 @@ simbolo_pf TS_constroi_simbolo_pf(char *identificador, int nivel_lexico, int des
     return pf;
 }
 
-simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, char *rotulo, int n_params, fila params){
+simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, char *rotulo, int n_params, pilha params){
     simbolo_func func;
     
     func.identificador = (char *) malloc(sizeof(char)*(strlen(identificador)+1));
@@ -95,7 +95,7 @@ simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int
     }
     else {
         func.n_params = 0;
-        func.params = constroi_fila();
+        func.params = constroi_pilha();
     }
     
     char *simb_str = TS_simbolo2str(&func);
@@ -128,10 +128,10 @@ void TS_imprime(pilha ts){
     imprime_pilha(ts,TS_simbolo2str);
 }
 
-char *TS_params2str(fila params){
+char *TS_params2str(pilha params){
     
     int param_str_len = strlen("{0, 0}");
-    int params_str_len = param_str_len*(tamanho_fila(params));
+    int params_str_len = param_str_len*(tamanho_pilha(params));
     
     char param_str[param_str_len+1];
     char *params_str = malloc (sizeof(char)*(params_str_len+1));
@@ -140,12 +140,12 @@ char *TS_params2str(fila params){
     
     params_str[0]='\0';
     
-    no_fila n = inicio(params);
+    no_pilha n = topo(params);
     while (n) {
-        p = (param *) conteudo_fila(n);
+        p = (param *) conteudo_pilha(n);
         snprintf(param_str, params_str_len+1, "{%d, %d}", p->tipo, p->passagem);
         strncat(params_str, param_str, params_str_len+1);
-        n = proximo_no_fila(n);
+        n = proximo_no_pilha(n);
     }
     return params_str;
 }
@@ -337,37 +337,264 @@ int TS_tamanho(pilha ts){
 
 int TS_remove_vs(int nivel_lexico, pilha ts){
     no_pilha n = topo(ts);
+    int removidos=0;
     int i=0;
     tipo_simbolo *s;
-    
+    char *s_str;
+    debug_print("Removendo VS de nivel lexico %d da tabela de simbolos.\n", nivel_lexico);
     while (n){
         s = (tipo_simbolo *) conteudo_pilha(n);
-        if (s->base.categoria == CAT_VS){
-            free (desempilha(ts));
-            i++;
+        if ( (s->base.categoria == CAT_VS) && (s->vs.nivel_lexico==nivel_lexico) ){
+            
+            s_str = TS_simbolo2str(s);
+            debug_print("Simbolo [%s] indice %d sera removido.\n",s_str, i);
+            free (s_str);
+            
+            n = proximo_no_pilha(n);
+            tipo_simbolo *s_removido = remove_indice_pilha(i,ts);
+            
+            s_str = TS_simbolo2str(s_removido);
+            debug_print("Simbolo [%s] removido da tabela de simbolos.\n",s_str);
+            free (s_str);
+            
+            free (s_removido);
+            i--;
+            removidos++;
         }
         else {
-            break;
+            n = proximo_no_pilha(n);
         }
-        n = topo(ts);
+        i++;
     }
+    debug_print("%d simbolos removidos.\n", i);
     
-    return i;
+    return removidos;
 }
 
 void TS_empilha(tipo_simbolo *s, pilha ts){
-    if (s) empilha((void *) s, ts);
+    if (!s)
+        erro(ERRO_DESCONHECIDO);
+        
+    char *ident1 = s->base.identificador;
+    categorias cat1 = s->base.categoria;
+    int nl1;
+    
+    tipo_simbolo *s2;
+    char *ident2;
+    categorias cat2;
+    int nl2;
+    
+    no_pilha n = topo(ts);
+    while (n) {
+        s2 = (tipo_simbolo *) conteudo_pilha(n);
+        n = proximo_no_pilha(n);
+        ident2 = s2->base.identificador;
+        cat2 = s2->base.categoria;
+        if (strcmp(ident1, ident2)==0) {
+            switch (cat1) {
+                case CAT_VS:
+                    nl1 = s->vs.nivel_lexico;
+                    switch (cat2) {
+                        case CAT_VS:
+                            nl2 = s2->vs.nivel_lexico;
+                            
+                            if(nl1==nl2) { // VS mesmo nivel
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                        case CAT_PF:
+                            nl2 = s2->pf.nivel_lexico;
+                            
+                            if(nl1==nl2) { // PF mesmo nivel
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                        case CAT_PROC:
+                            nl2 = s2->proc.nivel_lexico;
+                            
+                            if (nl1+1==nl2) { // PROC 1 nivel maior que VS
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                                
+                            break;
+                        case CAT_FUNC:
+                            nl2 = s2->func.nivel_lexico;
+                            
+                            if ((nl1+1==nl2) || (nl1==nl2)) { // FUNC 1 nivel maior ou igual que VS
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                    }
+                    break;
+                case CAT_PF: // Igual VS
+                    nl1 = s->pf.nivel_lexico;
+                    switch (cat2) {
+                        case CAT_VS:
+                            nl2 = s2->vs.nivel_lexico;
+                            
+                            if(nl1==nl2) { // VS mesmo nivel
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                        case CAT_PF:
+                            nl2 = s2->pf.nivel_lexico;
+                            
+                            if(nl1==nl2) { // PF mesmo nivel (quer dizer que sao da mesma subrot)
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                        case CAT_PROC:
+                            nl2 = s2->proc.nivel_lexico;
+                            
+                            if (nl1+1==nl2) { // PROC 1 nivel maior que PF
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                        case CAT_FUNC:
+                            nl2 = s2->func.nivel_lexico;
+                            
+                            if ((nl1+1==nl2) || (nl1==nl2)) { // FUNC 1 nivel maior ou igual que PF
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                    }
+                    break;
+                case CAT_PROC:
+                    nl1 = s->proc.nivel_lexico;
+                    switch (cat2) {
+                        case CAT_VS:
+                            nl2 = s2->vs.nivel_lexico;
+                            
+                            if (nl1-1==nl2) { // PROC 1 nivel maior que VS
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                        case CAT_PF:
+                            nl2 = s2->pf.nivel_lexico;
+                            
+                            if (nl1-1==nl2) { // PROC 1 nivel maior que PF
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                        case CAT_PROC:
+                            nl2 = s2->proc.nivel_lexico;
+                            
+                            if ((nl1-1==nl2) || (nl1==nl2)) { // PROC 1 nivel maior ou igual que PROC
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                        case CAT_FUNC:
+                            nl2 = s2->func.nivel_lexico;
+                            
+                            if (nl1-1==nl2) { // PROC 1 nivel maior que FUNC
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                    }
+                    break;
+                case CAT_FUNC:
+                    nl1 = s->func.nivel_lexico;
+                    switch (cat2) {
+                        case CAT_VS:
+                            nl2 = s2->vs.nivel_lexico;
+                            
+                            if ((nl1-1==nl2) || (nl1==nl2)) { // FUNC 1 nivel maior ou igual que VS
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                        case CAT_PF:
+                            nl2 = s2->pf.nivel_lexico;
+                            
+                            if ((nl1-1==nl2) || (nl1==nl2)) { // FUNC 1 nivel maior ou igual que VS
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                        case CAT_PROC:
+                            nl2 = s2->proc.nivel_lexico;
+                            
+                            if (nl1+1==nl2) { // PROC 1 nivel maior que FUNC
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                        case CAT_FUNC:
+                            nl2 = s2->func.nivel_lexico;
+                            
+                            if ((nl1-1==nl2) || (nl1==nl2)) { // FUNC 1 nivel maior ou igual que VS
+                                debug_print("Identificador duplicado=[%s]\n",ident1);
+                                TS_imprime(ts);
+                                erro(ERRO_IDENT_DUPLICADO);
+                            }
+                            
+                            break;
+                    }
+                    break;
+            }
+        }
+    }
+    
+     empilha((void *) s, ts);
 }
 
 
 void TS_atualiza_params(int num_params, pilha ts){
-    debug_print("Atualizando %d parametros.\n", num_params);
-    no_pilha n = topo(ts);
+    no_pilha n;
     int i=0;
     tipo_simbolo *s;
     param *p;
-    tipo_simbolo *subrot = TS_busca_subrotina(ts);
-    
+    char *s_str;
+    tipo_simbolo *subrot = conteudo_pilha(topo(pilha_decl_subrot));
+    if (subrot){
+        s_str = TS_simbolo2str(subrot);
+        debug_print("Atualizando %d parametros do simbolo [%s].\n", num_params, s_str);
+        free (s_str);
+    }
+    else {
+        erro(ERRO_FUNC_NDECL);
+    }
     n = topo(ts);
     while (n){
         s = (tipo_simbolo *) conteudo_pilha(n);
@@ -378,14 +605,16 @@ void TS_atualiza_params(int num_params, pilha ts){
             p->tipo = s->pf.tipo;
             p->passagem = s->pf.passagem;
             if (subrot->base.categoria == CAT_PROC){
-                enfileira( (void *) p, subrot->proc.params );
+                empilha( (void *) p, subrot->proc.params );
                 subrot->proc.n_params++;
             }
             else if (subrot->base.categoria == CAT_FUNC){
-                enfileira( (void *) p, subrot->func.params );  
+                empilha( (void *) p, subrot->func.params );
                 subrot->func.n_params++;
             }
-            
+            s_str = TS_simbolo2str(s);
+            debug_print("Simbolo [%s] enfileirado.\n",s_str);
+            free (s_str);
             i++;
         }
         else {
@@ -414,9 +643,97 @@ tipo_simbolo *TS_busca_subrotina(pilha ts){
     return NULL;
 }
 
-void TS_remove_subrotina(int num_params, pilha ts){
-    int i;
-    for (i = 0; i < num_params+1; i++) {
-        free(desempilha(ts));
+tipo_simbolo *TS_busca_procedimento(char *ident, pilha ts){
+    if (!ts)
+        return NULL;
+        
+    no_pilha n = topo(ts);
+    tipo_simbolo *subrot;
+    
+    while (n){ // acha simb da subrot
+        subrot = (tipo_simbolo *) conteudo_pilha(n);
+        if ((strncmp(ident, subrot->base.identificador, strlen(ident))==0) && (subrot->base.categoria == CAT_PROC)) {
+            return subrot;
+        }
+        n = proximo_no_pilha(n);
     }
+    return NULL;
+}
+
+void TS_remove_rtpr(tipo_simbolo *simb_rtpr, pilha ts){
+    no_pilha n;
+    int removidos=0;
+    int i=0;
+    int num_params;
+    int niv_lex;
+    tipo_simbolo *s;
+    char *s_str;
+    categorias cat = simb_rtpr->base.categoria;
+    
+    if (cat==CAT_PROC) {
+        debug_print("Retornando de Proc. %s, nivel lexico %d.\n", simb_rtpr->proc.identificador, simb_rtpr->proc.nivel_lexico);
+        num_params = simb_rtpr->proc.n_params;
+        niv_lex = simb_rtpr->proc.nivel_lexico;
+    }
+    else {
+        debug_print("Retornando de Func. %s, nivel lexico %d.\n", simb_rtpr->func.identificador, simb_rtpr->func.nivel_lexico);
+        num_params = simb_rtpr->func.n_params;
+        niv_lex = simb_rtpr->func.nivel_lexico;
+    }
+    
+    n = topo(ts);
+    while (n){
+        s = (tipo_simbolo *) conteudo_pilha(n);
+        
+        if (( (s->base.categoria == CAT_PF) && (s->vs.nivel_lexico==nivel_lexico) )
+        || ((s->base.categoria == CAT_PROC) && (s->proc.nivel_lexico>nivel_lexico))
+        || ((s->base.categoria == CAT_FUNC) && (s->func.nivel_lexico>nivel_lexico)))
+        {
+            n = proximo_no_pilha(n);
+            tipo_simbolo *s_removido = remove_indice_pilha(i,ts);
+            
+            s_str = TS_simbolo2str(s_removido);
+            debug_print("Simbolo [%s] removido da tabela de simbolos.\n",s_str);
+            free (s_str);
+            
+            free (s_removido);
+            removidos++;
+        }
+        else {
+            n = proximo_no_pilha(n);
+            i++;
+            continue;
+        }
+        
+/*        if ( (s->base.categoria == CAT_PF) && (s->vs.nivel_lexico==nivel_lexico) ){
+            s_str = TS_simbolo2str(s);
+            debug_print("VS [%s] indice %d sera removida.\n", s_str, i);
+            free (s_str);
+        }
+        else if ( (s->base.categoria == CAT_PROC) && (s->proc.nivel_lexico>nivel_lexico) ){
+            s_str = TS_simbolo2str(s);
+            debug_print("PROC [%s] indice %d sera removido.\n", s_str, i);
+            free (s_str);
+        }
+        else if ( (s->base.categoria == CAT_FUNC) && (s->func.nivel_lexico>nivel_lexico) ){
+            s_str = TS_simbolo2str(s);
+            debug_print("FUNC [%s] indice %d sera removida.\n", s_str, i);
+            free (s_str);
+        }
+        else {
+            n = proximo_no_pilha(n);
+            i++;
+            continue;
+        }
+        n = proximo_no_pilha(n);
+        tipo_simbolo *s_removido = remove_indice_pilha(i,ts);
+        
+        s_str = TS_simbolo2str(s_removido);
+        debug_print("Simbolo [%s] removido da tabela de simbolos.\n",s_str);
+        free (s_str);
+        
+        free (s_removido);
+        removidos++;*/
+    }
+    debug_print("%d simbolos removidos.\n", i);
 }

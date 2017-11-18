@@ -39,9 +39,10 @@ typedef struct aux_atrib {
 } taux_atrib;
 
 char token[TAM_TOKEN];
+char ident[TAM_TOKEN]; // var aux para armazenar token
 
 int num_vars;   // numero de vars de subrot
-int num_params_subrot; // numero de params na decl de subrot
+int num_params_subrot; // numero de params na decl/chamada de subrot
 int nivel_lexico;   // nivel lexico atual
 pilha tabela_simbolos;  // tabela de simbolos
 pilha pilha_rotulos_dsvs; // pilha de rotulos que desviam da decl. de subrotinas
@@ -55,3 +56,7 @@ char *main_rot; // rotulo que representa programa principal
 int has_label;  // flag para indicar que proximo comando possui um label
 int conta_tipo; // contador de simbolos com mesmo tipo que devem ser atualizados
 fila parametros; // fila de parametros usada no geraCodigo
+pilha pilha_decl_subrot;    // pilha de decl de subrotinas, topo=subrotina mais interna
+pilha pilha_cham_subrot;    // pilha de chamadas de subrotinas, topo=ultima subrot chamada
+int chamando_subrot; // flag que indica se estou em uma chamada de subrot
+int flag_var; // flag que indica se expressao eh uma variavel

@@ -1,12 +1,14 @@
 program exemplo75 (input, output);
-var m,n :  integer;
-j,k : boolean;
-procedure p(var a,b:integer; d:boolean);
-var x,y,z:integer;
+var p12:integer;
+    procedure p1(var a:integer; b:integer);
+    var p1:integer;
+    begin
+        p1(a,a);
+        p1(b,b);
+    end;
+
 begin
-    a:=2;
-end;
-begin    
-    j := (1+3 > 4) and true;
+    p12:=0;
+    p1(p12,p12);
 end.
 
