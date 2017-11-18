@@ -1,4 +1,9 @@
 %{
+int yylex();
+void yyerror(const char *s);
+%}
+
+%{
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -134,14 +139,14 @@ void erro(erros e){
     return;
 }
 
-int enfileira_param_int(int param_int){
+void enfileira_param_int(int param_int){
     int param_len = n_digitos(param_int)+1;
     char *param = (char *) malloc( sizeof(char)*(param_len+1) );
     snprintf(param, param_len, "%d", param_int);
     enfileira( (void *) param, parametros);
 }
 
-int enfileira_param_string(char *param_string){
+void enfileira_param_string(char *param_string){
     int param_len = strlen(param_string);
     char *param = (char *) malloc( sizeof(char)*(param_len+1) );
     strncpy(param, param_string, param_len+1);
@@ -163,8 +168,9 @@ void valida_tipos_unario(tipos tipo, tipos tipo_esperado){
 }
 
 char *prox_rotulo(){
-    snprintf(s_rot, TAM_ROT+1, "R%.2d", d_rot++);
-    return s_rot;
+    char *rot = (char *) malloc( sizeof(char)*(TAM_ROT+1));
+    snprintf(rot, TAM_ROT+1, "R%.2d", d_rot++);
+    return rot;
 }
 
 void aloca_mem(){
@@ -348,14 +354,9 @@ bloco :
     {
         aloca_mem();
         
-        char *rot_dsvs_aux = prox_rotulo();
-        
-        char *rotulo_dsvs = (char *) malloc( sizeof(char)*( TAM_ROT+1 ) );
-        strncpy(rotulo_dsvs, s_rot, strlen(s_rot)+1); // empilha copia pois tem free no desempilha
+        char *rotulo_dsvs = prox_rotulo();
         empilha( (void *) rotulo_dsvs, pilha_rotulos_dsvs);
         
-        rotulo_dsvs = (char *) malloc( sizeof(char)*( TAM_ROT+1 ) ); // ponteiro diferente do acima
-        strncpy(rotulo_dsvs, s_rot, strlen(s_rot)+1); // enfileira copia pois tem free no desenfileira
         enfileira_param_string(rotulo_dsvs); 
         
         geraCodigo (NULL, "DSVS");
@@ -391,7 +392,7 @@ var:
 parte_declara_subrotinas:
     parte_declara_subrotinas declara_procedimento PONTO_E_VIRGULA
     | parte_declara_subrotinas declara_funcao PONTO_E_VIRGULA
-    |
+    | %empty
 ;
 
 declara_procedimento:
@@ -527,7 +528,7 @@ declara_funcao:
 parte_declara_vars:
     VAR
     declara_vars
-    |
+    | %empty
 ;
 
 declara_vars: declara_vars declara_var 
@@ -597,7 +598,7 @@ comando:
         has_label=0;
     }
     | comando_sem_rotulo
-    |
+    | %empty
 ;
 
 comando_sem_rotulo:
@@ -640,7 +641,7 @@ ch_proc:
 passa_params:
     ABRE_PARENTESES lista_params FECHA_PARENTESES
     | ABRE_PARENTESES FECHA_PARENTESES
-    |
+    | %empty
 ;
 
 lista_params:
@@ -908,6 +909,9 @@ fator:
             case CAT_VS:
                 $$ = s->vs.tipo;
                 break;
+            default:
+                erro(ERRO_ATRIB);
+                break;
         }
         flag_var=1;
         carrega(s);
@@ -949,7 +953,7 @@ fator:
 
 %%
 
-main (int argc, char** argv) {
+int main (int argc, char** argv) {
     FILE* fp;
     extern FILE* yyin;
     

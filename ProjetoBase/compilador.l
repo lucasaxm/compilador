@@ -14,6 +14,8 @@ int nl = 1;
 
 %}
 
+%option nounput noinput
+
 pulo_linha [\n]
 
 descarte [\t ]+
