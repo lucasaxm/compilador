@@ -7,7 +7,7 @@ lex.yy.c: compilador.l compilador.h
 	flex compilador.l
 
 y.tab.c: compilador.y compilador.h
-	bison compilador.y -d -v --report=all
+	bison --debug compilador.y -d -v --report=all -Wall
 
 compilador.o : compilador.h compiladorF.c
 	gcc -c compiladorF.c -o compilador.o

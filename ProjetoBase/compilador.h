@@ -58,5 +58,4 @@ int conta_tipo; // contador de simbolos com mesmo tipo que devem ser atualizados
 fila parametros; // fila de parametros usada no geraCodigo
 pilha pilha_decl_subrot;    // pilha de decl de subrotinas, topo=subrotina mais interna
 pilha pilha_cham_subrot;    // pilha de chamadas de subrotinas, topo=ultima subrot chamada
-int chamando_subrot; // flag que indica se estou em uma chamada de subrot
 int flag_var; // flag que indica se expressao eh uma variavel

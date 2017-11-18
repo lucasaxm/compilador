@@ -98,9 +98,9 @@ simbolo_vs TS_constroi_simbolo_vs(char *identificador, int nivel_lexico, int des
 
 simbolo_proc TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, char *rotulo, int n_params, pilha params);
 
-simbolo_pf TS_constroi_simbolo_pf(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, tipos_passagem passagem);
-
 simbolo_func TS_constroi_simbolo_func(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, char *rotulo, int n_params, pilha params);
+
+simbolo_pf TS_constroi_simbolo_pf(char *identificador, int nivel_lexico, int deslocamento, tipos tipo, tipos_passagem passagem);
 
 simbolo_rot TS_constroi_simbolo_rot(char *identificador, int nivel_lexico, char *rotulo);
 
@@ -110,11 +110,13 @@ char *TS_params2str(pilha params);
 
 char *TS_simbolo2str(void *s);
 
-int TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts);
+void TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts);
 
 tipo_simbolo *TS_busca(char *identificador, pilha ts);
 
 tipo_simbolo *TS_busca_procedimento(char *identificador, pilha ts);
+
+tipo_simbolo *TS_busca_funcao(char *ident, pilha ts);
 
 int TS_tamanho(pilha ts);
 

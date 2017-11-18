@@ -249,7 +249,7 @@ void carrega(tipo_simbolo *simb){
     free (s_str);
     param *p;
     tipos_passagem pass;
-    if (chamando_subrot){
+    if (tamanho_pilha(pilha_cham_subrot)>0){
         tipo_simbolo *subrot = conteudo_pilha(topo(pilha_cham_subrot));
         if (!subrot)
             erro(ERRO_FUNC_NDECL);
@@ -315,7 +315,7 @@ void carrega(tipo_simbolo *simb){
 %token MULT MAIS MENOS MAIOR MENOR MAIOR_IGUAL MENOR_IGUAL DIFERENTE IGUAL OR AND NOT DIV T_TRUE
 %token T_FALSE
 
-%type<tipo> fator termo expressao_simples expressao
+%type<tipo> fator termo expressao_simples expressao ch_func
 
 %define parse.error verbose
 
@@ -382,16 +382,12 @@ lista_idents: lista_idents VIRGULA IDENT
 //     | var
 // ;
 
-var:
-    IDENT
-;
-
 /* DECLARACAO DE SUBROTINAS */
 
 parte_declara_subrotinas:
     parte_declara_subrotinas declara_procedimento PONTO_E_VIRGULA
     | parte_declara_subrotinas declara_funcao PONTO_E_VIRGULA
-    |
+    | %empty
 ;
 
 declara_procedimento:
@@ -405,7 +401,6 @@ declara_procedimento:
         enfileira_param_int(nivel_lexico);
         geraCodigo(s->proc.rotulo, "ENPR");
         num_params_subrot=0;
-        chamando_subrot=0;
     }
     params_formais PONTO_E_VIRGULA
     {
@@ -482,7 +477,43 @@ id_param:
 ;
 
 declara_funcao:
-    // TODO: PROXIMO PASSO
+    FUNCTION IDENT
+    {
+        debug_print("Iniciando declaracao da funcao '%s'\n", token);
+        s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
+        s->func = TS_constroi_simbolo_func(token, ++nivel_lexico, 0, TIPO_UNKNOWN, prox_rotulo(), 0, NULL);
+        TS_empilha(s, tabela_simbolos);
+        empilha(s, pilha_decl_subrot);
+        enfileira_param_int(nivel_lexico);
+        geraCodigo(s->func.rotulo, "ENPR");
+        num_params_subrot=0;
+    }
+    params_formais DOIS_PONTOS 
+    {
+        TS_atualiza_params(num_params_subrot, tabela_simbolos);
+        aux_categoria = CAT_FUNC;
+    }
+    tipo PONTO_E_VIRGULA bloco
+    {
+        tipo_simbolo *subrot = desempilha(pilha_decl_subrot);
+        
+        if (!subrot)
+            erro(ERRO_FUNC_NDECL);
+            
+        empilha(subrot, pilha_decl_subrot);
+        enfileira_param_int(nivel_lexico);
+        
+        int num_params;
+        
+        if (subrot->base.categoria == CAT_PROC){
+            enfileira_param_int(num_params = subrot->proc.n_params);
+        }
+        else
+            enfileira_param_int(num_params = subrot->func.n_params);
+        geraCodigo(NULL, "RTPR");
+        TS_remove_rtpr(desempilha(pilha_decl_subrot), tabela_simbolos);
+        nivel_lexico--;
+    }
 ;
 
 /* DECLARACAO DE VARS */
@@ -490,7 +521,7 @@ declara_funcao:
 parte_declara_vars:
     VAR
     declara_vars
-    |
+    | %empty
 ;
 
 declara_vars: declara_vars declara_var 
@@ -560,7 +591,7 @@ comando:
         has_label=0;
     }
     | comando_sem_rotulo
-    |
+    | %empty
 ;
 
 comando_sem_rotulo:
@@ -578,7 +609,6 @@ comando_sem_rotulo2:
 
 ch_proc:
     {
-        chamando_subrot=1;
         num_params_subrot=0;
         tipo_simbolo *subrot = TS_busca_procedimento(ident, tabela_simbolos);
         if (!subrot)
@@ -593,17 +623,46 @@ ch_proc:
         tipo_simbolo *subrot = desempilha(pilha_cham_subrot);
         if(num_params_subrot < subrot->proc.n_params)
             erro(ERRO_NPARAM);
-        chamando_subrot=0;
         enfileira_param_string(subrot->proc.rotulo);
         enfileira_param_int(nivel_lexico);
         geraCodigo(NULL, "CHPR");
     }
 ;
 
+ch_func:
+    {
+        num_params_subrot=0;
+        tipo_simbolo *subrot = TS_busca_funcao(ident, tabela_simbolos);
+        if (!subrot) {
+            debug_print("Funcao com ident [%s] nao declarada.\n", ident);
+            erro(ERRO_FUNC_NDECL);
+        }
+        empilha(subrot, pilha_cham_subrot);
+        char *subrot_srt = TS_simbolo2str(subrot);
+        debug_print("Chamando subrotina [%s]\n", subrot_srt);
+        free (subrot_srt);
+    }
+    passa_params_func
+    {
+        tipo_simbolo *subrot = desempilha(pilha_cham_subrot);
+        if(num_params_subrot < subrot->func.n_params)
+            erro(ERRO_NPARAM);
+        enfileira_param_string(subrot->func.rotulo);
+        enfileira_param_int(nivel_lexico);
+        geraCodigo(NULL, "CHPR");
+        $$ = subrot->func.tipo;
+    }
+;
+
 passa_params:
     ABRE_PARENTESES lista_params FECHA_PARENTESES
     | ABRE_PARENTESES FECHA_PARENTESES
-    |
+    | %empty
+;
+
+passa_params_func:
+    ABRE_PARENTESES lista_params FECHA_PARENTESES
+    | ABRE_PARENTESES FECHA_PARENTESES
 ;
 
 lista_params:
@@ -671,12 +730,12 @@ atrib:
 expressao:
     expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp=[%d]\n","expressao","EXP_SIMP", $1);
+        debug_print ("Regra: %s | %s | tipo_expsimp=[%d]\n","expressao","EXP_SIMP", $1);
         $$ = $1;
     }
     | expressao_simples IGUAL expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","IGUAL", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","IGUAL", $1, $3);
         if ($1 == $3){
             $$ = TIPO_BOOL;
         } else {
@@ -687,7 +746,7 @@ expressao:
     }
     | expressao_simples DIFERENTE expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","DIFERENTE", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","DIFERENTE", $1, $3);
         if ($1 == $3){
             $$ = TIPO_BOOL;
         } else {
@@ -698,7 +757,7 @@ expressao:
     }
     | expressao_simples MENOR expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = TIPO_BOOL;
         } else {
@@ -709,7 +768,7 @@ expressao:
     }
     | expressao_simples MENOR_IGUAL expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR_IGUAL", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR_IGUAL", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = TIPO_BOOL;
         } else {
@@ -720,7 +779,7 @@ expressao:
     }
     | expressao_simples MAIOR_IGUAL expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR_IGUAL", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR_IGUAL", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = TIPO_BOOL;
         } else {
@@ -731,7 +790,7 @@ expressao:
     }
     | expressao_simples MAIOR expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = TIPO_BOOL;
         } else {
@@ -745,7 +804,7 @@ expressao:
 expressao_simples:
     MAIS termo
     {
-        // debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO POS", $2);
+        debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO POS", $2);
         if ( ($2 == TIPO_INT) ){
             $$ = $2;
         } else {
@@ -754,7 +813,7 @@ expressao_simples:
     }
     | MENOS termo
     {
-        // debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO NEG", $2);
+        debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO NEG", $2);
         if ( ($2 == TIPO_INT) ){
             $$ = $2;
         } else {
@@ -765,12 +824,12 @@ expressao_simples:
     }
     | termo
     {
-        // debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO", $1);
+        debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO", $1);
         $$ = $1;
     }
     | expressao_simples MAIS termo
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SOMA", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SOMA", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = $1;
         } else {
@@ -781,7 +840,7 @@ expressao_simples:
     }
     | expressao_simples MENOS termo
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SUBT", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SUBT", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = $1;
         } else {
@@ -792,7 +851,7 @@ expressao_simples:
     }
     | expressao_simples OR termo
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","OR", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","OR", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_BOOL) ){
             $$ = $1;
         } else {
@@ -806,12 +865,12 @@ expressao_simples:
 termo:
     fator 
     {
-        // debug_print ("Regra: %s | %s | tipo_fator=[%d]\n","termo","FATOR", $1);
+        debug_print ("Regra: %s | %s | tipo_fator=[%d]\n","termo","FATOR", $1);
         $$ = $1;
     }
     | termo MULT fator 
     {
-        // debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","MULT", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","MULT", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = $1;
         } else {
@@ -822,7 +881,7 @@ termo:
     }
     | termo DIV fator 
     {
-        // debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","DIV", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","DIV", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = $1;
         } else {
@@ -833,7 +892,7 @@ termo:
     }
     | termo AND fator 
     {
-        // debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","AND", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","AND", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_BOOL) ){
             $$ = $1;
         } else {
@@ -848,7 +907,7 @@ fator:
     ABRE_PARENTESES expressao FECHA_PARENTESES
     {
         $$ = $2;
-        // debug_print ("Regra: %s | %s\n","fator","(EXPR)");
+        debug_print ("Regra: %s | %s\n","fator","(EXPR)");
     }
     | NUMERO
     {
@@ -856,9 +915,9 @@ fator:
         enfileira_param_string(token);
         geraCodigo(NULL, "CRCT");
         flag_var=0;
-        // debug_print ("Regra: %s | %s\n","fator","NUMERO");
+        debug_print ("Regra: %s | %s\n","fator","NUMERO");
     }
-    | var
+    | IDENT
     {
         s = TS_busca(token, tabela_simbolos);
         if (s == NULL) {
@@ -871,10 +930,43 @@ fator:
             case CAT_VS:
                 $$ = s->vs.tipo;
                 break;
+            case CAT_FUNC:
+                enfileira_param_int(1);
+                geraCodigo(NULL, "AMEM"); // Aloca espaco para retorno da func
+                num_params_subrot=0;
+                tipo_simbolo *subrot = TS_busca_funcao(ident, tabela_simbolos);
+                if (!subrot)
+                    erro(ERRO_FUNC_NDECL);
+                    
+                char *subrot_srt = TS_simbolo2str(subrot);
+                debug_print("Chamando subrotina [%s]\n", subrot_srt);
+                free (subrot_srt);
+                
+                if(num_params_subrot < subrot->func.n_params)
+                    erro(ERRO_NPARAM);
+                
+                enfileira_param_string(subrot->func.rotulo);
+                enfileira_param_int(nivel_lexico);
+                geraCodigo(NULL, "CHPR");
+                $$ = subrot->func.tipo;
+                
+                break;
+            default:
+                erro(ERRO_VS_NDECL);
+                break;
         }
         flag_var=1;
         carrega(s);
-        // debug_print ("Regra: %s | %s\n","fator","VAR");
+        debug_print ("Regra: %s | %s\n","fator","VAR");
+    }
+    | IDENT
+    {
+        strncpy(ident, token, TAM_TOKEN);
+    }
+    ABRE_PARENTESES ch_func
+    {
+        $$ = $4;
+        debug_print ("Regra: %s | %s\n","fator","ch_func");
     }
     | NOT fator
     {
@@ -886,7 +978,7 @@ fator:
         }
         geraCodigo(NULL, "NEGA");
         flag_var=0;
-        // debug_print ("Regra: %s | %s\n","fator","NOT");
+        debug_print ("Regra: %s | %s\n","fator","NOT");
     }
     | T_TRUE
     {
@@ -894,7 +986,7 @@ fator:
         enfileira_param_int(1);
         geraCodigo(NULL, "CRCT");
         flag_var=0;
-        // debug_print ("Regra: %s | %s\n","fator","T_TRUE");
+        debug_print ("Regra: %s | %s\n","fator","T_TRUE");
     }
     | T_FALSE
     {
@@ -902,9 +994,9 @@ fator:
         enfileira_param_int(0);
         geraCodigo(NULL, "CRCT");
         flag_var=0;
-        // debug_print ("Regra: %s | %s\n","fator","T_FALSE");
+        debug_print ("Regra: %s | %s\n","fator","T_FALSE");
     }
-
+;
 
 // regra_label:
 //     NUMERO DOIS_PONTOS
@@ -915,7 +1007,8 @@ fator:
 main (int argc, char** argv) {
     FILE* fp;
     extern FILE* yyin;
-    
+    extern int yydebug;
+    yydebug = 1;    
     if (argc<2 || argc>2) {
         printf("usage compilador <arq>a %d\n", argc);
         return(-1);
