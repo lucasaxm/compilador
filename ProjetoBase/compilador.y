@@ -255,7 +255,7 @@ void carrega(tipo_simbolo *simb){
     free (s_str);
     param *p;
     tipos_passagem pass;
-    if (chamando_subrot){
+    if (tamanho_pilha(pilha_cham_subrot)>0){
         tipo_simbolo *subrot = conteudo_pilha(topo(pilha_cham_subrot));
         if (!subrot)
             erro(ERRO_FUNC_NDECL);
@@ -406,7 +406,6 @@ declara_procedimento:
         enfileira_param_int(nivel_lexico);
         geraCodigo(s->proc.rotulo, "ENPR");
         num_params_subrot=0;
-        chamando_subrot=0;
     }
     params_formais PONTO_E_VIRGULA
     {
@@ -493,7 +492,6 @@ declara_funcao:
         enfileira_param_int(nivel_lexico);
         geraCodigo(s->func.rotulo, "ENPR");
         num_params_subrot=0;
-        chamando_subrot=0;
     }
     params_formais DOIS_PONTOS 
     {
@@ -616,7 +614,6 @@ comando_sem_rotulo2:
 
 ch_proc:
     {
-        chamando_subrot=1;
         num_params_subrot=0;
         tipo_simbolo *subrot = TS_busca_procedimento(ident, tabela_simbolos);
         if (!subrot)
@@ -631,7 +628,6 @@ ch_proc:
         tipo_simbolo *subrot = desempilha(pilha_cham_subrot);
         if(num_params_subrot < subrot->proc.n_params)
             erro(ERRO_NPARAM);
-        chamando_subrot=0;
         enfileira_param_string(subrot->proc.rotulo);
         enfileira_param_int(nivel_lexico);
         geraCodigo(NULL, "CHPR");
