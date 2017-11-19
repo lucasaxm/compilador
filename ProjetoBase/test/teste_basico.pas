@@ -1,20 +1,12 @@
 program exemplo75 (input, output);
-    var a,b:boolean;
-    function f1():boolean;
-        procedure p2(x:integer);
-        begin
-            f1:=true;
-            x:=3;
-        end;
-    begin
-        f1:=false;
-        p2(2);
-    end;
-    procedure p1(var x:boolean);
-    begin
-    end;
+    var a:boolean;
+        b:integer;
 begin
-    a := f1;
-    p1(a);
+    if (a=true) then
+        a := false
+    else if (b>10) then
+        b:=10
+    else
+        a := b=10;
 end.
 

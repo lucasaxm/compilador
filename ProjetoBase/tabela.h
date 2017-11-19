@@ -15,7 +15,8 @@ typedef enum erros {
     ERRO_TINCOMPATIVEL,
     ERRO_PARAMREF,
     ERRO_DESCONHECIDO,
-    ERRO_IDENT_DUPLICADO
+    ERRO_IDENT_DUPLICADO,
+    ERRO_IFNOTBOOL
 } erros;
 
 typedef enum categorias {
