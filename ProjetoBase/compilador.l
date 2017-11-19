@@ -118,6 +118,13 @@ while {
     return WHILE;
 }
 
+do {
+    // Regra 23
+    strncpy (token, yytext, TAM_TOKEN);
+    // IMPRIME("do  ");
+    return DO;
+}
+
 integer {
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("integer  ");

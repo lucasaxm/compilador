@@ -337,7 +337,7 @@ void carrega(tipo_simbolo *simb){
 %token PROGRAM ABRE_PARENTESES FECHA_PARENTESES VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO T_BEGIN
 %token T_END VAR IDENT ATRIBUICAO LABEL PROCEDURE FUNCTION GOTO IF THEN ELSE WHILE INT BOOL NUMERO
 %token MULT MAIS MENOS MAIOR MENOR MAIOR_IGUAL MENOR_IGUAL DIFERENTE IGUAL OR AND NOT DIV T_TRUE
-%token T_FALSE
+%token T_FALSE DO
 
 %type<tipo> fator termo expressao_simples expressao
 
@@ -355,7 +355,8 @@ programa :
         d_rot=0;
         tabela_simbolos = constroi_pilha();
         pilha_rotulos_subrot = constroi_pilha();
-        pilha_rotulos_ifs = constroi_pilha();
+        pilha_rotulos_cond = constroi_pilha();
+        pilha_rotulos_repet = constroi_pilha();
         pilha_decl_subrot = constroi_pilha();
         pilha_cham_subrot = constroi_pilha();
         parametros = constroi_fila();
@@ -622,6 +623,7 @@ comando:
 comando_sem_rotulo:
     comando_com_ident
     | comando_condicional
+    | comando_repetitivo
 ;
 
 
@@ -639,32 +641,56 @@ comando_com_ident_cont:
 ;
 
 comando_condicional:
-    IF expressao THEN if_aux comando_sem_rotulo
+    IF expressao THEN comeca_if comando_sem_rotulo
     {
-        geraCodigo(desempilha(pilha_rotulos_ifs), "NADA"); // fim do IF sem else
+        geraCodigo(desempilha(pilha_rotulos_cond), "NADA"); // fim do IF sem else
     }
-    | IF expressao THEN if_aux comando_sem_rotulo ELSE
+    | IF expressao THEN comeca_if comando_sem_rotulo ELSE
     {
         if ($2 != TIPO_BOOL)
             erro(ERRO_IFNOTBOOL);
-        char *rot_comeco_else = desempilha(pilha_rotulos_ifs);
+        char *rot_comeco_else = desempilha(pilha_rotulos_cond);
         char *rot_fim_else = prox_rotulo();
-        empilha(rot_fim_else, pilha_rotulos_ifs);
+        empilha(rot_fim_else, pilha_rotulos_cond);
         enfileira_param_string(rot_fim_else);
         geraCodigo(NULL, "DSVS"); // pula o ELSE se entrei no IF
         geraCodigo(rot_comeco_else, "NADA"); // comeco do ELSE
     }
     comando_sem_rotulo
     {
-        geraCodigo(desempilha(pilha_rotulos_ifs), "NADA"); // fim do ELSE
+        geraCodigo(desempilha(pilha_rotulos_cond), "NADA"); // fim do ELSE
     }
 ;
 
-if_aux:
+comando_repetitivo:
+    WHILE 
+    {
+        char *ponto_de_retorno = prox_rotulo();
+        empilha(ponto_de_retorno, pilha_rotulos_repet);
+        geraCodigo(ponto_de_retorno, "NADA");
+    }
+    expressao
+    {
+        char *rot_saida = prox_rotulo();
+        empilha(rot_saida, pilha_rotulos_repet);
+        enfileira_param_string(rot_saida);
+        geraCodigo(NULL, "DSVF");
+    }
+    DO comando_sem_rotulo
+    {
+        char *rot_saida = desempilha(pilha_rotulos_repet);
+        char *ponto_de_retorno = desempilha(pilha_rotulos_repet);
+        enfileira_param_string(ponto_de_retorno);
+        geraCodigo(NULL, "DSVS");
+        geraCodigo(rot_saida, "NADA");
+    }
+;
+
+comeca_if:
     %empty
     {
         char *rot = prox_rotulo();
-        empilha(rot, pilha_rotulos_ifs);
+        empilha(rot, pilha_rotulos_cond);
         enfileira_param_string(rot);
         geraCodigo(NULL, "DSVF");
     }
