@@ -58,13 +58,13 @@ void geraCodigo (char* rot, char* comando) {
     if (primeiro) {
         strncat(comando_completo, " ", comando_len+1);
         strncat(comando_completo, param, comando_len+1);
-        // debug_print("comando_completo=[%s]\n", comando_completo);
+        debug_print("comando_completo=[%s]\n", comando_completo);
         primeiro=0;
     }
     else {
         strncat(comando_completo, ", ", comando_len+1);
         strncat(comando_completo, param, comando_len+1);
-        // debug_print("comando_completo=[%s]\n", comando_completo);
+        debug_print("comando_completo=[%s]\n", comando_completo);
     }
     free(param);
     n = inicio(parametros);
@@ -129,6 +129,9 @@ void erro(erros e){
             break;
         case ERRO_IDENT_DUPLICADO:
             snprintf(msg, msg_size, "Linha %d | Identificador duplicado.", nl);
+            break;
+        case ERRO_IFNOTBOOL:
+            snprintf(msg, msg_size, "Linha %d | Resultado da expressao de um comando condificional deve ser booleano.", nl);
             break;
         default:
             snprintf(msg, msg_size, "Linha %d | Erro desconhecido.", nl);
@@ -339,6 +342,7 @@ void carrega(tipo_simbolo *simb){
 %type<tipo> fator termo expressao_simples expressao
 
 %define parse.error verbose
+%right THEN ELSE // Same precedence, but "shift" wins.
 
 %%
 
@@ -350,7 +354,8 @@ programa :
         nivel_lexico=0;
         d_rot=0;
         tabela_simbolos = constroi_pilha();
-        pilha_rotulos_dsvs = constroi_pilha();
+        pilha_rotulos_subrot = constroi_pilha();
+        pilha_rotulos_ifs = constroi_pilha();
         pilha_decl_subrot = constroi_pilha();
         pilha_cham_subrot = constroi_pilha();
         parametros = constroi_fila();
@@ -370,7 +375,7 @@ bloco :
         aloca_mem();
         
         char *rotulo_dsvs = prox_rotulo();
-        empilha( (void *) rotulo_dsvs, pilha_rotulos_dsvs);
+        empilha( (void *) rotulo_dsvs, pilha_rotulos_subrot);
         
         enfileira_param_string(rotulo_dsvs); 
         
@@ -378,7 +383,7 @@ bloco :
     }
     parte_declara_subrotinas
     {
-        char *rot_dsvs_aux = desempilha(pilha_rotulos_dsvs);
+        char *rot_dsvs_aux = desempilha(pilha_rotulos_subrot);
         geraCodigo(rot_dsvs_aux, "NADA");
         free(rot_dsvs_aux);
     }
@@ -615,16 +620,54 @@ comando:
 ;
 
 comando_sem_rotulo:
+    comando_com_ident
+    | comando_condicional
+;
+
+
+comando_com_ident:
     IDENT
     {
         strncpy(ident, token, TAM_TOKEN);
     }
-    comando_sem_rotulo2
+    comando_com_ident_cont
 ;
 
-comando_sem_rotulo2:
+comando_com_ident_cont:
     atrib
     | ch_proc
+;
+
+comando_condicional:
+    IF expressao THEN if_aux comando_sem_rotulo
+    {
+        geraCodigo(desempilha(pilha_rotulos_ifs), "NADA"); // fim do IF sem else
+    }
+    | IF expressao THEN if_aux comando_sem_rotulo ELSE
+    {
+        if ($2 != TIPO_BOOL)
+            erro(ERRO_IFNOTBOOL);
+        char *rot_comeco_else = desempilha(pilha_rotulos_ifs);
+        char *rot_fim_else = prox_rotulo();
+        empilha(rot_fim_else, pilha_rotulos_ifs);
+        enfileira_param_string(rot_fim_else);
+        geraCodigo(NULL, "DSVS"); // pula o ELSE se entrei no IF
+        geraCodigo(rot_comeco_else, "NADA"); // comeco do ELSE
+    }
+    comando_sem_rotulo
+    {
+        geraCodigo(desempilha(pilha_rotulos_ifs), "NADA"); // fim do ELSE
+    }
+;
+
+if_aux:
+    %empty
+    {
+        char *rot = prox_rotulo();
+        empilha(rot, pilha_rotulos_ifs);
+        enfileira_param_string(rot);
+        geraCodigo(NULL, "DSVF");
+    }
 ;
 
 ch_proc:
@@ -744,12 +787,12 @@ atrib:
 expressao:
     expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp=[%d]\n","expressao","EXP_SIMP", $1);
+        debug_print ("Regra: %s | %s | tipo_expsimp=[%d]\n","expressao","EXP_SIMP", $1);
         $$ = $1;
     }
     | expressao_simples IGUAL expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","IGUAL", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","IGUAL", $1, $3);
         if ($1 == $3){
             $$ = TIPO_BOOL;
         } else {
@@ -760,7 +803,7 @@ expressao:
     }
     | expressao_simples DIFERENTE expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","DIFERENTE", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","DIFERENTE", $1, $3);
         if ($1 == $3){
             $$ = TIPO_BOOL;
         } else {
@@ -771,7 +814,7 @@ expressao:
     }
     | expressao_simples MENOR expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = TIPO_BOOL;
         } else {
@@ -782,7 +825,7 @@ expressao:
     }
     | expressao_simples MENOR_IGUAL expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR_IGUAL", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR_IGUAL", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = TIPO_BOOL;
         } else {
@@ -793,7 +836,7 @@ expressao:
     }
     | expressao_simples MAIOR_IGUAL expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR_IGUAL", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR_IGUAL", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = TIPO_BOOL;
         } else {
@@ -804,7 +847,7 @@ expressao:
     }
     | expressao_simples MAIOR expressao_simples
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = TIPO_BOOL;
         } else {
@@ -818,7 +861,7 @@ expressao:
 expressao_simples:
     MAIS termo
     {
-        // debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO POS", $2);
+        debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO POS", $2);
         if ( ($2 == TIPO_INT) ){
             $$ = $2;
         } else {
@@ -827,7 +870,7 @@ expressao_simples:
     }
     | MENOS termo
     {
-        // debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO NEG", $2);
+        debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO NEG", $2);
         if ( ($2 == TIPO_INT) ){
             $$ = $2;
         } else {
@@ -838,12 +881,12 @@ expressao_simples:
     }
     | termo
     {
-        // debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO", $1);
+        debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO", $1);
         $$ = $1;
     }
     | expressao_simples MAIS termo
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SOMA", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SOMA", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = $1;
         } else {
@@ -854,7 +897,7 @@ expressao_simples:
     }
     | expressao_simples MENOS termo
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SUBT", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SUBT", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = $1;
         } else {
@@ -865,7 +908,7 @@ expressao_simples:
     }
     | expressao_simples OR termo
     {
-        // debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","OR", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","OR", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_BOOL) ){
             $$ = $1;
         } else {
@@ -879,12 +922,12 @@ expressao_simples:
 termo:
     fator 
     {
-        // debug_print ("Regra: %s | %s | tipo_fator=[%d]\n","termo","FATOR", $1);
+        debug_print ("Regra: %s | %s | tipo_fator=[%d]\n","termo","FATOR", $1);
         $$ = $1;
     }
     | termo MULT fator 
     {
-        // debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","MULT", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","MULT", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = $1;
         } else {
@@ -895,7 +938,7 @@ termo:
     }
     | termo DIV fator 
     {
-        // debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","DIV", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","DIV", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_INT) ){
             $$ = $1;
         } else {
@@ -906,7 +949,7 @@ termo:
     }
     | termo AND fator 
     {
-        // debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","AND", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","AND", $1, $3);
         if ( ($1 == $3) && ($1 == TIPO_BOOL) ){
             $$ = $1;
         } else {
@@ -921,7 +964,7 @@ fator:
     ABRE_PARENTESES expressao FECHA_PARENTESES
     {
         $$ = $2;
-        // debug_print ("Regra: %s | %s\n","fator","(EXPR)");
+        debug_print ("Regra: %s | %s\n","fator","(EXPR)");
     }
     | NUMERO
     {
@@ -929,7 +972,7 @@ fator:
         enfileira_param_string(token);
         geraCodigo(NULL, "CRCT");
         flag_var=0;
-        // debug_print ("Regra: %s | %s\n","fator","NUMERO");
+        debug_print ("Regra: %s | %s\n","fator","NUMERO");
     }
     | var
     {
@@ -955,7 +998,7 @@ fator:
                 break;
         }
         carrega(s);
-        // debug_print ("Regra: %s | %s\n","fator","VAR");
+        debug_print ("Regra: %s | %s\n","fator","VAR");
     }
     | NOT fator
     {
@@ -967,7 +1010,7 @@ fator:
         }
         geraCodigo(NULL, "NEGA");
         flag_var=0;
-        // debug_print ("Regra: %s | %s\n","fator","NOT");
+        debug_print ("Regra: %s | %s\n","fator","NOT");
     }
     | T_TRUE
     {
@@ -975,7 +1018,7 @@ fator:
         enfileira_param_int(1);
         geraCodigo(NULL, "CRCT");
         flag_var=0;
-        // debug_print ("Regra: %s | %s\n","fator","T_TRUE");
+        debug_print ("Regra: %s | %s\n","fator","T_TRUE");
     }
     | T_FALSE
     {
@@ -983,7 +1026,7 @@ fator:
         enfileira_param_int(0);
         geraCodigo(NULL, "CRCT");
         flag_var=0;
-        // debug_print ("Regra: %s | %s\n","fator","T_FALSE");
+        debug_print ("Regra: %s | %s\n","fator","T_FALSE");
     }
 
 
@@ -996,9 +1039,11 @@ fator:
 int main (int argc, char** argv) {
     FILE* fp;
     extern FILE* yyin;
-    
-    extern int yydebug;
-    yydebug = 1;
+
+    // if (DEBUG) {
+    //     extern int yydebug;
+    //     yydebug = 1;
+    // }
     
     if (argc<2 || argc>2) {
         printf("usage compilador <arq>a %d\n", argc);
