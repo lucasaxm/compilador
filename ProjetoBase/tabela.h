@@ -82,7 +82,7 @@ typedef struct simbolo_func {
 typedef struct simbolo_rot {
     categorias categoria;
     char *identificador;
-    char rotulo[4];
+    char rotulo[TAM_ROT+1];
     int nivel_lexico;
 } simbolo_rot;
 
@@ -130,3 +130,5 @@ void TS_atualiza_params(int num_params, pilha ts);
 tipo_simbolo *TS_busca_subrotina(pilha ts);
 
 void TS_remove_rtpr(tipo_simbolo *s, pilha ts);
+
+int TS_conta_vs(int nivel_lexico, pilha ts);

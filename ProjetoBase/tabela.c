@@ -113,7 +113,7 @@ simbolo_rot TS_constroi_simbolo_rot(char *identificador, int nivel_lexico, char 
     
     rot.categoria=CAT_ROT;
     
-    strncpy(rot.rotulo, rotulo, TAM_ROT);
+    strncpy(rot.rotulo, rotulo, TAM_ROT+1);
     
     rot.nivel_lexico = nivel_lexico;
     
@@ -360,9 +360,36 @@ int TS_remove_vs(int nivel_lexico, pilha ts){
         }
         i++;
     }
-    debug_print("%d simbolos removidos.\n", i);
+    debug_print("%d simbolos removidos.\n", removidos);
     
     return removidos;
+}
+
+int TS_conta_vs(int nivel_lexico, pilha ts){
+    no_pilha n = topo(ts);
+    int contador=0;
+    tipo_simbolo *s;
+    char *s_str;
+    debug_print("Contando VS de nivel lexico %d da tabela de simbolos.\n", nivel_lexico);
+    while (n){
+        s = (tipo_simbolo *) conteudo_pilha(n);
+        if ( (s->base.categoria == CAT_VS) && (s->vs.nivel_lexico==nivel_lexico) ){
+            
+            s_str = TS_simbolo2str(s);
+            debug_print("Simbolo [%s] encontrado.\n",s_str);
+            free (s_str);
+            
+            n = proximo_no_pilha(n);
+            
+            contador++;
+        }
+        else {
+            n = proximo_no_pilha(n);
+        }
+    }
+    debug_print("%d VS encontradas.\n", contador);
+    
+    return contador;
 }
 
 void TS_empilha(tipo_simbolo *s, pilha ts){
@@ -573,7 +600,6 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
      empilha((void *) s, ts);
 }
 
-
 void TS_atualiza_params(int num_params, pilha ts){
     no_pilha n;
     int i=0;
@@ -700,7 +726,7 @@ void TS_remove_rtpr(tipo_simbolo *simb_rtpr, pilha ts){
     while (n){
         s = (tipo_simbolo *) conteudo_pilha(n);
         
-        if (( (s->base.categoria == CAT_PF) && (s->vs.nivel_lexico==nivel_lexico) )
+        if (( (s->base.categoria == CAT_PF) && (s->pf.nivel_lexico==nivel_lexico) )
         || ((s->base.categoria == CAT_PROC) && (s->proc.nivel_lexico>nivel_lexico))
         || ((s->base.categoria == CAT_FUNC) && (s->func.nivel_lexico>nivel_lexico)))
         {
@@ -720,35 +746,6 @@ void TS_remove_rtpr(tipo_simbolo *simb_rtpr, pilha ts){
             continue;
         }
         
-/*        if ( (s->base.categoria == CAT_PF) && (s->vs.nivel_lexico==nivel_lexico) ){
-            s_str = TS_simbolo2str(s);
-            debug_print("VS [%s] indice %d sera removida.\n", s_str, i);
-            free (s_str);
-        }
-        else if ( (s->base.categoria == CAT_PROC) && (s->proc.nivel_lexico>nivel_lexico) ){
-            s_str = TS_simbolo2str(s);
-            debug_print("PROC [%s] indice %d sera removido.\n", s_str, i);
-            free (s_str);
-        }
-        else if ( (s->base.categoria == CAT_FUNC) && (s->func.nivel_lexico>nivel_lexico) ){
-            s_str = TS_simbolo2str(s);
-            debug_print("FUNC [%s] indice %d sera removida.\n", s_str, i);
-            free (s_str);
-        }
-        else {
-            n = proximo_no_pilha(n);
-            i++;
-            continue;
-        }
-        n = proximo_no_pilha(n);
-        tipo_simbolo *s_removido = remove_indice_pilha(i,ts);
-        
-        s_str = TS_simbolo2str(s_removido);
-        debug_print("Simbolo [%s] removido da tabela de simbolos.\n",s_str);
-        free (s_str);
-        
-        free (s_removido);
-        removidos++;*/
     }
-    debug_print("%d simbolos removidos.\n", i);
+    debug_print("%d simbolos removidos.\n", removidos);
 }
