@@ -203,7 +203,7 @@ char *TS_simbolo2str(void *simbolo_void){
             snprintf(str, str_len+1, "%s / PF(%d) / %d / %d / %d / %d", s->pf.identificador, s->pf.categoria, s->pf.nivel_lexico, s->pf.deslocamento, s->pf.tipo, s->pf.passagem);
             break;
         case CAT_FUNC: {
-            char *params_str = TS_params2str(s->proc.params);
+            char *params_str = TS_params2str(s->func.params);
             str_len+=strlen(s->func.identificador);
             str_len+=strlen(" / FUNC(");
             str_len+=n_digitos(s->func.categoria);
@@ -240,22 +240,21 @@ char *TS_simbolo2str(void *simbolo_void){
     return str;
 }
 
-/* Retorna 1 em sucesso e 0 em falha*/
-int TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts){
+void TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts){
     no_pilha n;
     tipo_simbolo *s;
     int i;
     
     if (conta_tipo==0 && cat!=CAT_FUNC){
         debug_print("%s\n", "Nenhum simbolo para ser atualizado. Por que fui chamado?");
-        return 0;
+        return;
     }
     
     n=topo(ts);
     
     if (!n){
         debug_print("%s\n", "Tabela de simbolos vazia. Por que fui chamado?");
-        return 0;
+        return;
     }
     
     s = (tipo_simbolo *) conteudo_pilha(n);
@@ -265,11 +264,11 @@ int TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts){
                 s = (tipo_simbolo *) conteudo_pilha(n);
                 if (s->vs.tipo == TIPO_UNKNOWN){
                     s->vs.tipo = tipo;
-                    debug_print ("tipo da vs com ident. \"%s\" atualizado para %d\n", s->vs.identificador, s->vs.tipo);
+                    debug_print ("Tipo da vs com ident. \"%s\" atualizado para %d\n", s->vs.identificador, s->vs.tipo);
                 }
                 else{
-                    debug_print ("tipo da vs com ident. \"%s\" ja estava definido (tipo=[%d]).\n", s->pf.identificador, s->pf.tipo);
-                    return 0;
+                    debug_print ("Tipo da vs com ident. \"%s\" ja estava definido (tipo=[%d]).\n", s->pf.identificador, s->pf.tipo);
+                    erro(ERRO_TINCOMPATIVEL);
                 }
             }
             break;
@@ -278,36 +277,31 @@ int TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts){
                 s = (tipo_simbolo *) conteudo_pilha(n);
                 if (s->pf.tipo == TIPO_UNKNOWN){
                     s->pf.tipo = tipo;
-                    debug_print ("tipo do pf com ident. \"%s\" atualizado para %d\n", s->pf.identificador, s->pf.tipo);
+                    debug_print ("Tipo do pf com ident. \"%s\" atualizado para %d\n", s->pf.identificador, s->pf.tipo);
                 }
                 else{
-                    debug_print ("tipo do pf com ident. \"%s\" ja estava definido (tipo=[%d]).\n", s->pf.identificador, s->pf.tipo);
-                    return 0;
+                    debug_print ("Tipo do pf com ident. \"%s\" ja estava definido (tipo=[%d]).\n", s->pf.identificador, s->pf.tipo);
+                    erro(ERRO_TINCOMPATIVEL);
                 }
             }
             break;
         case CAT_FUNC:
-            while(n){
-                s = (tipo_simbolo *) conteudo_pilha(n);
-                if (s->base.categoria == CAT_FUNC) break;
-                n=proximo_no_pilha(n);
-            }
-            if(!n){
-                debug_print("%s\n","Nenhuma func encontrada na tabela de simbolos.");
-                return 0;
+            s = conteudo_pilha(topo(pilha_decl_subrot));
+            if(!s){
+                debug_print("%s\n", "Nenhuma funcao sendo declarada.");
+                erro(ERRO_FUNC_NDECL);
             }
             if (s->func.tipo == TIPO_UNKNOWN){
                 s->func.tipo = tipo;
-                debug_print ("tipo da func com ident. \"%s\" atualizado para %d\n", s->func.identificador, s->func.tipo);
+                debug_print ("Tipo da func com ident. \"%s\" atualizado para %d\n", s->func.identificador, s->func.tipo);
             }
             else{
-                debug_print ("tipo da func com ident. \"%s\" ja estava definido (tipo=[%d]).\n", s->pf.identificador, s->pf.tipo);
-                return 0;
+                debug_print ("Tipo da func com ident. \"%s\" ja estava definido (tipo=[%d]).\n", s->pf.identificador, s->pf.tipo);
+                erro(ERRO_TINCOMPATIVEL);
             }
             break;
     }
     conta_tipo = 0;
-    return 1;
 }
 
 tipo_simbolo *TS_busca(char *identificador, pilha ts){
@@ -622,6 +616,10 @@ void TS_atualiza_params(int num_params, pilha ts){
         }
         n = proximo_no_pilha(n);
     }
+    if (subrot->base.categoria == CAT_FUNC) {
+        subrot->func.deslocamento = -4-i;
+        debug_print("Deslocamento da funcao atualizado para %d.\n", subrot->func.deslocamento);
+    }
     debug_print("%d parametros atualizados.\n", i);
     TS_imprime(ts);
 }
@@ -653,6 +651,23 @@ tipo_simbolo *TS_busca_procedimento(char *ident, pilha ts){
     while (n){ // acha simb da subrot
         subrot = (tipo_simbolo *) conteudo_pilha(n);
         if ((strncmp(ident, subrot->base.identificador, strlen(ident))==0) && (subrot->base.categoria == CAT_PROC)) {
+            return subrot;
+        }
+        n = proximo_no_pilha(n);
+    }
+    return NULL;
+}
+
+tipo_simbolo *TS_busca_funcao(char *ident, pilha ts){
+    if (!ts)
+        return NULL;
+        
+    no_pilha n = topo(ts);
+    tipo_simbolo *subrot;
+    
+    while (n){ // acha simb da subrot
+        subrot = (tipo_simbolo *) conteudo_pilha(n);
+        if ((strncmp(ident, subrot->base.identificador, strlen(ident))==0) && (subrot->base.categoria == CAT_FUNC)) {
             return subrot;
         }
         n = proximo_no_pilha(n);

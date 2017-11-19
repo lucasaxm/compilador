@@ -1,4 +1,9 @@
 %{
+int yylex();
+void yyerror(const char *s);
+%}
+
+%{
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -134,14 +139,14 @@ void erro(erros e){
     return;
 }
 
-int enfileira_param_int(int param_int){
+void enfileira_param_int(int param_int){
     int param_len = n_digitos(param_int)+1;
     char *param = (char *) malloc( sizeof(char)*(param_len+1) );
     snprintf(param, param_len, "%d", param_int);
     enfileira( (void *) param, parametros);
 }
 
-int enfileira_param_string(char *param_string){
+void enfileira_param_string(char *param_string){
     int param_len = strlen(param_string);
     char *param = (char *) malloc( sizeof(char)*(param_len+1) );
     strncpy(param, param_string, param_len+1);
@@ -163,8 +168,9 @@ void valida_tipos_unario(tipos tipo, tipos tipo_esperado){
 }
 
 char *prox_rotulo(){
-    snprintf(s_rot, TAM_ROT+1, "R%.2d", d_rot++);
-    return s_rot;
+    char *rot = (char *) malloc( sizeof(char)*(TAM_ROT+1));
+    snprintf(rot, TAM_ROT+1, "R%.2d", d_rot++);
+    return rot;
 }
 
 void aloca_mem(){
@@ -249,7 +255,7 @@ void carrega(tipo_simbolo *simb){
     free (s_str);
     param *p;
     tipos_passagem pass;
-    if (chamando_subrot){
+    if (tamanho_pilha(pilha_cham_subrot)>0){
         tipo_simbolo *subrot = conteudo_pilha(topo(pilha_cham_subrot));
         if (!subrot)
             erro(ERRO_FUNC_NDECL);
@@ -296,7 +302,22 @@ void carrega(tipo_simbolo *simb){
             else if (pass == PASS_REF)
                 geraCodigo(NULL, "CREN");
             break;
+        case CAT_FUNC: // func sem ()
+            debug_print("%s\n","Simbolo eh FUNC");
+            if (pass == PASS_REF)
+                erro(ERRO_PARAMREF);
+            if(simb->func.n_params > 0)
+                erro(ERRO_NPARAM);
+            enfileira_param_int(1);
+            geraCodigo(NULL, "AMEM"); // aloca espaco para ret da func
+            enfileira_param_string(simb->func.rotulo);
+            enfileira_param_int(nivel_lexico);
+            geraCodigo(NULL, "CHPR");
+            break;
         default:
+            s_str = TS_simbolo2str(simb);
+            debug_print("Simbolo com erro: [%s]\n", s_str);
+            free(s_str);
             erro(ERRO_TPARAM);
             break;
     }
@@ -348,14 +369,9 @@ bloco :
     {
         aloca_mem();
         
-        char *rot_dsvs_aux = prox_rotulo();
-        
-        char *rotulo_dsvs = (char *) malloc( sizeof(char)*( TAM_ROT+1 ) );
-        strncpy(rotulo_dsvs, s_rot, strlen(s_rot)+1); // empilha copia pois tem free no desempilha
+        char *rotulo_dsvs = prox_rotulo();
         empilha( (void *) rotulo_dsvs, pilha_rotulos_dsvs);
         
-        rotulo_dsvs = (char *) malloc( sizeof(char)*( TAM_ROT+1 ) ); // ponteiro diferente do acima
-        strncpy(rotulo_dsvs, s_rot, strlen(s_rot)+1); // enfileira copia pois tem free no desenfileira
         enfileira_param_string(rotulo_dsvs); 
         
         geraCodigo (NULL, "DSVS");
@@ -391,7 +407,7 @@ var:
 parte_declara_subrotinas:
     parte_declara_subrotinas declara_procedimento PONTO_E_VIRGULA
     | parte_declara_subrotinas declara_funcao PONTO_E_VIRGULA
-    |
+    | %empty
 ;
 
 declara_procedimento:
@@ -405,7 +421,6 @@ declara_procedimento:
         enfileira_param_int(nivel_lexico);
         geraCodigo(s->proc.rotulo, "ENPR");
         num_params_subrot=0;
-        chamando_subrot=0;
     }
     params_formais PONTO_E_VIRGULA
     {
@@ -482,7 +497,43 @@ id_param:
 ;
 
 declara_funcao:
-    // TODO: PROXIMO PASSO
+    FUNCTION IDENT
+    {
+        debug_print("Iniciando declaracao da funcao '%s'\n", token);
+        s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
+        s->func = TS_constroi_simbolo_func(token, ++nivel_lexico, 0, TIPO_UNKNOWN, prox_rotulo(), 0, NULL);
+        TS_empilha(s, tabela_simbolos);
+        empilha(s, pilha_decl_subrot);
+        enfileira_param_int(nivel_lexico);
+        geraCodigo(s->func.rotulo, "ENPR");
+        num_params_subrot=0;
+    }
+    params_formais DOIS_PONTOS 
+    {
+        TS_atualiza_params(num_params_subrot, tabela_simbolos);
+        aux_categoria = CAT_FUNC;
+    }
+    tipo PONTO_E_VIRGULA bloco
+    {
+        tipo_simbolo *subrot = desempilha(pilha_decl_subrot);
+        
+        if (!subrot)
+            erro(ERRO_FUNC_NDECL);
+            
+        empilha(subrot, pilha_decl_subrot);
+        enfileira_param_int(nivel_lexico);
+        
+        int num_params;
+        
+        if (subrot->base.categoria == CAT_PROC){
+            enfileira_param_int(num_params = subrot->proc.n_params);
+        }
+        else
+            enfileira_param_int(num_params = subrot->func.n_params);
+        geraCodigo(NULL, "RTPR");
+        TS_remove_rtpr(desempilha(pilha_decl_subrot), tabela_simbolos);
+        nivel_lexico--;
+    }
 ;
 
 /* DECLARACAO DE VARS */
@@ -490,7 +541,7 @@ declara_funcao:
 parte_declara_vars:
     VAR
     declara_vars
-    |
+    | %empty
 ;
 
 declara_vars: declara_vars declara_var 
@@ -560,7 +611,7 @@ comando:
         has_label=0;
     }
     | comando_sem_rotulo
-    |
+    | %empty
 ;
 
 comando_sem_rotulo:
@@ -578,7 +629,6 @@ comando_sem_rotulo2:
 
 ch_proc:
     {
-        chamando_subrot=1;
         num_params_subrot=0;
         tipo_simbolo *subrot = TS_busca_procedimento(ident, tabela_simbolos);
         if (!subrot)
@@ -593,7 +643,6 @@ ch_proc:
         tipo_simbolo *subrot = desempilha(pilha_cham_subrot);
         if(num_params_subrot < subrot->proc.n_params)
             erro(ERRO_NPARAM);
-        chamando_subrot=0;
         enfileira_param_string(subrot->proc.rotulo);
         enfileira_param_int(nivel_lexico);
         geraCodigo(NULL, "CHPR");
@@ -603,7 +652,7 @@ ch_proc:
 passa_params:
     ABRE_PARENTESES lista_params FECHA_PARENTESES
     | ABRE_PARENTESES FECHA_PARENTESES
-    |
+    | %empty
 ;
 
 lista_params:
@@ -637,6 +686,7 @@ atrib:
     {
         debug_print("begin atribuicao. ident=[%s]\n", ident);
         aux_atrib.s = TS_busca(ident, tabela_simbolos);
+        char *s_str;
         if (aux_atrib.s == NULL) {
             erro(ERRO_VS_NDECL);
         }
@@ -646,6 +696,29 @@ atrib:
                 break;
             case CAT_VS:
                 aux_atrib.tipo = aux_atrib.s->vs.tipo;
+                break;
+            case CAT_FUNC:
+                // testa se to dentro de decl dessa funcao procurando na pilha de decl de subrot
+                s_str = TS_simbolo2str(aux_atrib.s);
+                no_pilha n = topo(pilha_decl_subrot);
+                tipo_simbolo *aux_s;
+                while(n){
+                    aux_s = conteudo_pilha(n);
+                    if (aux_s == aux_atrib.s) { // apontam pro mesmo lugar, sao mesmo simb
+                        debug_print("Funcao [%s] sendo decl. pode atribuir.\n", s_str);
+                        break;
+                    }
+                    n = proximo_no_pilha(n);
+                }
+                if (!n) {
+                    debug_print("Tentando atribuir para funcao [%s] fora da decl da propria.\n", s_str);
+                    free(s_str);
+                    erro(ERRO_ATRIB);
+                }
+                free(s_str);
+                    
+                aux_atrib.tipo = aux_atrib.s->func.tipo;
+                
                 break;
             default:
                 erro(ERRO_ATRIB);
@@ -867,12 +940,20 @@ fator:
         switch (s->base.categoria){
             case CAT_PF:
                 $$ = s->pf.tipo;
+                flag_var=1;
                 break;
             case CAT_VS:
                 $$ = s->vs.tipo;
+                flag_var=1;
+                break;
+            case CAT_FUNC:
+                $$ = s->func.tipo;
+                flag_var=0;
+                break;
+            default:
+                erro(ERRO_ATRIB);
                 break;
         }
-        flag_var=1;
         carrega(s);
         // debug_print ("Regra: %s | %s\n","fator","VAR");
     }
@@ -912,9 +993,12 @@ fator:
 
 %%
 
-main (int argc, char** argv) {
+int main (int argc, char** argv) {
     FILE* fp;
     extern FILE* yyin;
+    
+    extern int yydebug;
+    yydebug = 1;
     
     if (argc<2 || argc>2) {
         printf("usage compilador <arq>a %d\n", argc);

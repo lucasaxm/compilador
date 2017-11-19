@@ -1,14 +1,20 @@
 program exemplo75 (input, output);
-var p12:integer;
-    procedure p1(var a:integer; b:integer);
-    var p1:integer;
+    var a,b:boolean;
+    function f1():boolean;
+        procedure p2(x:integer);
+        begin
+            f1:=true;
+            x:=3;
+        end;
     begin
-        p1(a,a);
-        p1(b,b);
+        f1:=false;
+        p2(2);
     end;
-
+    procedure p1(var x:boolean);
+    begin
+    end;
 begin
-    p12:=0;
-    p1(p12,p12);
+    a := f1;
+    p1(a);
 end.
 

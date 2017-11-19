@@ -1,0 +1,5 @@
+#!/bin/bash
+
+if make -f ~/workspace/ProjetoBase/Makefile; then
+    ./compilador test/teste_basico.pas
+fi
