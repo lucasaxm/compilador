@@ -302,7 +302,22 @@ void carrega(tipo_simbolo *simb){
             else if (pass == PASS_REF)
                 geraCodigo(NULL, "CREN");
             break;
+        case CAT_FUNC: // func sem ()
+            debug_print("%s\n","Simbolo eh FUNC");
+            if (pass == PASS_REF)
+                erro(ERRO_PARAMREF);
+            if(simb->func.n_params > 0)
+                erro(ERRO_NPARAM);
+            enfileira_param_int(1);
+            geraCodigo(NULL, "AMEM"); // aloca espaco para ret da func
+            enfileira_param_string(simb->func.rotulo);
+            enfileira_param_int(nivel_lexico);
+            geraCodigo(NULL, "CHPR");
+            break;
         default:
+            s_str = TS_simbolo2str(simb);
+            debug_print("Simbolo com erro: [%s]\n", s_str);
+            free(s_str);
             erro(ERRO_TPARAM);
             break;
     }
@@ -901,15 +916,20 @@ fator:
         switch (s->base.categoria){
             case CAT_PF:
                 $$ = s->pf.tipo;
+                flag_var=1;
                 break;
             case CAT_VS:
                 $$ = s->vs.tipo;
+                flag_var=1;
+                break;
+            case CAT_FUNC:
+                $$ = s->func.tipo;
+                flag_var=0;
                 break;
             default:
                 erro(ERRO_ATRIB);
                 break;
         }
-        flag_var=1;
         carrega(s);
         // debug_print ("Regra: %s | %s\n","fator","VAR");
     }
@@ -952,6 +972,9 @@ fator:
 int main (int argc, char** argv) {
     FILE* fp;
     extern FILE* yyin;
+    
+    extern int yydebug;
+    yydebug = 1;
     
     if (argc<2 || argc>2) {
         printf("usage compilador <arq>a %d\n", argc);
