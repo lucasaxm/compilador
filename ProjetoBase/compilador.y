@@ -686,6 +686,7 @@ atrib:
     {
         debug_print("begin atribuicao. ident=[%s]\n", ident);
         aux_atrib.s = TS_busca(ident, tabela_simbolos);
+        char *s_str;
         if (aux_atrib.s == NULL) {
             erro(ERRO_VS_NDECL);
         }
@@ -695,6 +696,29 @@ atrib:
                 break;
             case CAT_VS:
                 aux_atrib.tipo = aux_atrib.s->vs.tipo;
+                break;
+            case CAT_FUNC:
+                // testa se to dentro de decl dessa funcao procurando na pilha de decl de subrot
+                s_str = TS_simbolo2str(aux_atrib.s);
+                no_pilha n = topo(pilha_decl_subrot);
+                tipo_simbolo *aux_s;
+                while(n){
+                    aux_s = conteudo_pilha(n);
+                    if (aux_s == aux_atrib.s) { // apontam pro mesmo lugar, sao mesmo simb
+                        debug_print("Funcao [%s] sendo decl. pode atribuir.\n", s_str);
+                        break;
+                    }
+                    n = proximo_no_pilha(n);
+                }
+                if (!n) {
+                    debug_print("Tentando atribuir para funcao [%s] fora da decl da propria.\n", s_str);
+                    free(s_str);
+                    erro(ERRO_ATRIB);
+                }
+                free(s_str);
+                    
+                aux_atrib.tipo = aux_atrib.s->func.tipo;
+                
                 break;
             default:
                 erro(ERRO_ATRIB);
