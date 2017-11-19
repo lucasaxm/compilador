@@ -46,7 +46,8 @@ int num_params_subrot; // numero de params na decl/chamada de subrot
 int nivel_lexico;   // nivel lexico atual
 pilha tabela_simbolos;  // tabela de simbolos
 pilha pilha_rotulos_subrot; // pilha de rotulos que desviam da decl. de subrotinas
-pilha pilha_rotulos_ifs; // pilha de rotulos que desviam da decl. de subrotinas
+pilha pilha_rotulos_cond; // pilha de rotulos que sao usados no comando condicional
+pilha pilha_rotulos_repet; // pilha de rotulos que sao usados no comando repetitivo
 tipo_simbolo *s;    // simbolo usado em diversos lugares no codigo
 taux_atrib aux_atrib;   // estrutura que auxilia no parsing de atribuicao
 tipos_passagem aux_passagem;    // auxiliar para adicionar tipo de passagem de params
