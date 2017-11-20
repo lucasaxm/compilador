@@ -20,5 +20,6 @@ var m,n : integer;
 begin
      p(f(m),n);
 	 n:= f(m);
+	 write(f(f(n)+1));
 end.
     

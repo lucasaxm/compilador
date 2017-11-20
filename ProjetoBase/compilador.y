@@ -985,7 +985,7 @@ expressao_simples:
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
-        // TODO: PENSAR NO GERACODIGO
+        geraCodigo(NULL, "INVR");
         flag_var=0;
     }
     | termo
@@ -1195,8 +1195,20 @@ var:
 
 io:
     read
-    // | write
+    | write
     // | writeln
+;
+
+write:
+    WRITE ABRE_PARENTESES lista_write FECHA_PARENTESES
+    {
+        geraCodigo(NULL, "IMPR");
+    }
+;
+
+lista_write:
+    lista_write VIRGULA expressao
+    | expressao
 ;
 
 read:
