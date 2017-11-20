@@ -78,7 +78,8 @@ void geraCodigo (char* rot, char* comando) {
     debug_print ("comando_completo=[%s]\n", comando_completo);
     fprintf(fp, "     %s\n", comando_completo); fflush(fp);
   }
-  TS_imprime(tabela_simbolos);
+  if (DEBUG)
+    TS_imprime(tabela_simbolos);
 }
 
 int n_digitos(int n){
@@ -241,7 +242,8 @@ void aloca_mem(){
     enfileira_param_int(num_vars);
     
     debug_print("%s\n","parametros:");
-    imprime_fila(parametros, NULL);
+    if (DEBUG)
+        imprime_fila(parametros, NULL);
     
     num_vars=0; // zera contador de variáveis
     
@@ -259,7 +261,8 @@ void desaloca_mem(){
     enfileira_param_int(removidos);
     
     debug_print("%s\n","parametros:");
-    imprime_fila(parametros, NULL);
+    if (DEBUG)
+        imprime_fila(parametros, NULL);
     
     num_vars=0; // zera contador de variáveis
     
@@ -278,7 +281,8 @@ void armazena(){
             
             enfileira_param_int(aux_atrib.s->func.deslocamento);
             
-            imprime_fila(parametros, NULL);
+            if (DEBUG)
+                imprime_fila(parametros, NULL);
             
             geraCodigo(NULL, "ARMZ");
             
