@@ -313,7 +313,6 @@ tipo_simbolo *TS_busca(char *identificador, pilha ts){
     while ( n ) {
         s = (tipo_simbolo *) conteudo_pilha(n);
         if ( strcmp(identificador, s->base.identificador) == 0 ){
-            char *simb_str_ptr = simb_str;
             simb_str = TS_simbolo2str(s);
             debug_print("Simbolo encontrado: %s.\n", simb_str);
             free (simb_str);
@@ -748,4 +747,62 @@ void TS_remove_rtpr(tipo_simbolo *simb_rtpr, pilha ts){
         
     }
     debug_print("%d simbolos removidos.\n", removidos);
+}
+
+void *TS_clona_param(void *param){
+    void *copia = malloc(sizeof(int));
+    memcpy(copia, param, sizeof(int));
+    return copia;
+}
+
+void *TS_clona_simbolo(void *s){
+    tipo_simbolo *orig = (tipo_simbolo *) s;
+    tipo_simbolo *copia = malloc(sizeof(tipo_simbolo));
+    switch(orig->base.categoria){ 
+        case CAT_VS:
+            copia->vs = TS_constroi_simbolo_vs(
+                strdup(orig->vs.identificador),
+                orig->vs.nivel_lexico,
+                orig->vs.deslocamento,
+                orig->vs.tipo
+            );
+            break;
+        case CAT_PROC:
+            copia->proc = TS_constroi_simbolo_proc(
+                strdup(orig->proc.identificador),
+                orig->proc.nivel_lexico,
+                strdup(orig->proc.rotulo),
+                orig->proc.n_params,
+                clona_pilha(orig->proc.params, TS_clona_param)
+            );
+            break;
+        case CAT_PF:
+            copia->pf = TS_constroi_simbolo_pf(
+                strdup(orig->pf.identificador),
+                orig->pf.nivel_lexico,
+                orig->pf.deslocamento,
+                orig->pf.tipo,
+                orig->pf.passagem
+            );
+            break;
+        case CAT_FUNC:
+            copia->func = TS_constroi_simbolo_func(
+                strdup(orig->func.identificador),
+                orig->func.nivel_lexico,
+                orig->func.deslocamento,
+                orig->func.tipo,
+                strdup(orig->func.rotulo),
+                orig->func.n_params,
+                clona_pilha(orig->func.params, TS_clona_param)
+            );
+            break;
+        case CAT_ROT:
+            copia->rot = TS_constroi_simbolo_rot(
+                strdup(orig->rot.identificador),
+                orig->rot.nivel_lexico,
+                strdup(orig->rot.rotulo)
+            );
+            break;
+    }
+    return (void *)copia;
 }

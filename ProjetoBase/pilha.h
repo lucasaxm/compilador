@@ -73,5 +73,7 @@ void imprime_pilha(pilha p, char *conteudo2str(void *));
 void *busca_indice_pilha(int indice, pilha p);
 
 void *remove_indice_pilha(int indice, pilha p);
+
+pilha clona_pilha(pilha p, void *copia_conteudo(void *c));
     
 #endif

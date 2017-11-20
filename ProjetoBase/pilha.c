@@ -184,3 +184,15 @@ void *remove_indice_pilha(int indice, pilha p){
   
   return c;
 }
+
+pilha clona_pilha(pilha p, void *copia_conteudo(void *c)){
+    pilha copia = constroi_pilha();
+    no_pilha n = topo(p);
+    while (n){
+        if (copia_conteudo)
+            empilha(copia_conteudo(conteudo_pilha(n)), copia);
+        else
+            empilha(conteudo_pilha(n), copia);
+        n = proximo_no_pilha(n);
+    }
+}
