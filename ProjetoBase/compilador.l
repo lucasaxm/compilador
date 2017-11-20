@@ -26,15 +26,7 @@ numero [0-9]+
 
 comentario "(*".*"*)"
 
-texto "\""[a-zAZ0-9 \'\\\.\:\=\;\,\|\[\]\{\}\*\+\-\<\>\(\)\%\$\#\@\!]*"\""
-
 %%
-
-{texto} {
-    strncpy (texto, yytext, TAM_TEXTO);
-    // IMPRIME("texto ");
-    return TEXTO;
-}
 
 read {
     strncpy (token, yytext, TAM_TOKEN);
@@ -151,18 +143,6 @@ do {
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("do  ");
     return DO;
-}
-
-integer {
-    strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("integer  ");
-    return INT;
-}
-
-boolean {
-    strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("boolean  ");
-    return BOOL;
 }
 
 := {
@@ -296,6 +276,12 @@ true {
 false { 
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" false ");
+    return T_FALSE;
+}
+
+type {
+    strncpy (token, yytext, TAM_TOKEN);
+    // IMPRIME(" type ");
     return T_FALSE;
 }
 

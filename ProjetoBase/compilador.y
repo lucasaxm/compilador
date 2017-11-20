@@ -134,6 +134,9 @@ void erro(erros e){
         case ERRO_IFNOTBOOL:
             snprintf(msg, msg_size, "Linha %d | Resultado da expressao de um comando condificional deve ser booleano.", nl);
             break;
+        case ERRO_TIPONAOEXISTE
+            snprintf(msg, msg_size, "Linha %d | Tipo nao existe.", nl);
+            break;
         default:
             snprintf(msg, msg_size, "Linha %d | Erro desconhecido.", nl);
             break;
@@ -386,14 +389,14 @@ void carrega(tipo_simbolo *simb){
 
 
 %union {
-    int tipo;
+    simbolo_type tipo;
 }
 
 
 %token PROGRAM ABRE_PARENTESES FECHA_PARENTESES VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO T_BEGIN
-%token T_END VAR IDENT ATRIBUICAO LABEL PROCEDURE FUNCTION GOTO IF THEN ELSE WHILE INT BOOL NUMERO
+%token T_END VAR IDENT ATRIBUICAO LABEL PROCEDURE FUNCTION GOTO IF THEN ELSE WHILE NUMERO
 %token MULT MAIS MENOS MAIOR MENOR MAIOR_IGUAL MENOR_IGUAL DIFERENTE IGUAL OR AND NOT DIV T_TRUE
-%token T_FALSE DO READ WRITE WRITELN TEXTO
+%token T_FALSE DO READ WRITE WRITELN TYPE
 
 %type<tipo> fator termo expressao_simples expressao fator_com_ident fator_com_ident_cont var ch_func
 
@@ -417,6 +420,14 @@ programa :
         pilha_cham_subrot = constroi_pilha();
         parametros = constroi_fila();
         geraCodigo (NULL, "INPP");
+        
+        tipo_simbolo *tipo_primitivo = malloc(sizeof(tipo_simbolo));
+        tipo_primitivo->type = TS_constroi_simbolo_type("integer", TIPO_INT);
+        TS_empilha(tipo_primitivo);
+        
+        tipo_primitivo = malloc(sizeof(tipo_simbolo));
+        tipo_primitivo->type = TS_constroi_simbolo_type("boolean", TIPO_BOOL);
+        TS_empilha(tipo_primitivo);
     }
     PROGRAM IDENT 
     ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA
@@ -428,6 +439,7 @@ programa :
 
 bloco : 
     parte_declara_rotulos
+    parte_declara_tipos
     parte_declara_vars
     {
         aloca_mem();
@@ -455,6 +467,29 @@ lista_idents: lista_idents VIRGULA IDENT
             | IDENT
 ;
 
+parte_declara_tipos:
+    TYPE lista_novos_tipos PONTO_E_VIRGULA
+    | %empty
+;
+
+lista_novos_tipos:
+    lista_novos_tipos PONTO_E_VIRGULA id_tipo
+    | id_tipo
+;
+
+id_tipo:
+    IDENT
+    {
+        tipo_simbolo *simb_type = (tipo_simbolo *) malloc (sizeof(tipo_simbolo));
+        simb_type->type = TS_constroi_simbolo_type(token, TIPO_UNKNOWN);
+    }
+    IGUAL
+    {
+        aux_categoria = CAT_TYPE;
+        conta_tipo++;
+    }
+    tipo
+;
 parte_declara_rotulos:
     LABEL lista_labels PONTO_E_VIRGULA
     | %empty
@@ -563,7 +598,7 @@ id_param:
     IDENT
     { /* insere params na tabela de símbolos */
         s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
-        s->pf = TS_constroi_simbolo_pf(token, nivel_lexico, 0, TIPO_UNKNOWN, aux_passagem); // atualiza deslocamento e tipo depois
+        s->pf = TS_constroi_simbolo_pf(token, nivel_lexico, 0, NULL, aux_passagem); // atualiza deslocamento e tipo depois
         TS_empilha(s, tabela_simbolos);
         conta_tipo++;
         num_params_decl_subrot++;
@@ -575,7 +610,7 @@ declara_funcao:
     {
         debug_print("Iniciando declaracao da funcao '%s'\n", token);
         s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
-        s->func = TS_constroi_simbolo_func(token, ++nivel_lexico, 0, TIPO_UNKNOWN, prox_rotulo(), 0, NULL);
+        s->func = TS_constroi_simbolo_func(token, ++nivel_lexico, 0, NULL, prox_rotulo(), 0, NULL);
         TS_empilha(s, tabela_simbolos);
         empilha(s, pilha_decl_subrot);
         enfileira_param_int(nivel_lexico);
@@ -628,14 +663,11 @@ declara_var :
     tipo PONTO_E_VIRGULA
 ;
 
-tipo :
-    BOOL
+tipo:
+    IDENT
     {
-        TS_atualiza_tipos(TIPO_BOOL, aux_categoria, tabela_simbolos);
-    }
-    | INT
-    {
-        TS_atualiza_tipos(TIPO_INT, aux_categoria, tabela_simbolos);
+        tipo_simbolo *tipo = TS_busca_tipo(token, tabela_simbolos);
+        TS_atualiza_tipos(tipo, aux_categoria, tabela_simbolos);
     }
 ;
 
@@ -648,7 +680,7 @@ id_var:
     IDENT
     { /* insere vars na tabela de símbolos */
         s = (tipo_simbolo *) malloc(sizeof(tipo_simbolo));
-        s->vs = TS_constroi_simbolo_vs(token, nivel_lexico, num_vars++, TIPO_UNKNOWN);
+        s->vs = TS_constroi_simbolo_vs(token, nivel_lexico, num_vars++, NULL);
         TS_empilha(s, tabela_simbolos);
         conta_tipo++;
     }
