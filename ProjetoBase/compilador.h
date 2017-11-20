@@ -29,6 +29,7 @@
  * ------------------------------------------------------------------- */
 
 extern char token[TAM_TOKEN];
+extern char token_old[TAM_TOKEN];
 extern int nivel_lexico;
 extern int desloc;
 extern int nl;
@@ -39,6 +40,7 @@ typedef struct aux_atrib {
 } taux_atrib;
 
 char token[TAM_TOKEN];
+char token_old[TAM_TOKEN];
 char ident[TAM_TOKEN]; // var aux para armazenar token
 
 int num_vars;   // numero de vars de subrot
