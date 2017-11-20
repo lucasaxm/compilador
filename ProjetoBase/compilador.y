@@ -142,6 +142,64 @@ void erro(erros e){
     return;
 }
 
+void empilha_ch_subrot(tipo_simbolo *subrot) {
+    tchsubrot *chsubrot = malloc(sizeof(tchsubrot));
+    chsubrot->params_chamados = 0;
+    chsubrot->subrot = subrot;
+    empilha(chsubrot, pilha_cham_subrot);
+}
+
+tipo_simbolo *desempilha_ch_subrot() {
+    tchsubrot *chsubrot = desempilha(pilha_cham_subrot);
+    tipo_simbolo *subrot = chsubrot->subrot;
+    if (subrot->base.categoria == CAT_PROC) {
+        if(chsubrot->params_chamados < subrot->proc.n_params)
+            erro(ERRO_NPARAM);
+    }
+    else if (subrot->base.categoria == CAT_FUNC) {
+        if(chsubrot->params_chamados < subrot->func.n_params)
+            erro(ERRO_NPARAM);
+    }
+    free(chsubrot);
+    return subrot;
+}
+
+param *param_atual_ch_subrot() {
+    param *p;
+    tchsubrot *chsubrot = conteudo_pilha(topo(pilha_cham_subrot));
+    if (!chsubrot)
+        return NULL;
+    tipo_simbolo *subrot = chsubrot->subrot;
+    if (subrot->base.categoria == CAT_PROC) {
+        if(chsubrot->params_chamados == subrot->proc.n_params)
+            return NULL;
+        p = busca_indice_pilha(chsubrot->params_chamados, subrot->proc.params);
+    }
+    else if (subrot->base.categoria == CAT_FUNC) {
+        if(chsubrot->params_chamados == subrot->func.n_params)
+            return NULL;
+        p = busca_indice_pilha(chsubrot->params_chamados, subrot->func.params);
+    }
+    return p;
+}
+
+void incr_params_chamados_ch_subrot(){
+    tchsubrot *chsubrot = conteudo_pilha(topo(pilha_cham_subrot));
+    if (!chsubrot)
+        erro(ERRO_DESCONHECIDO);
+    chsubrot->params_chamados++;
+    tipo_simbolo *subrot = chsubrot->subrot;
+    if (((subrot->base.categoria == CAT_PROC) && (chsubrot->params_chamados > subrot->proc.n_params))
+    || ((subrot->base.categoria == CAT_FUNC) && (chsubrot->params_chamados > subrot->func.n_params)))
+    {
+            erro(ERRO_NPARAM);
+    }
+}
+
+int subrot_sendo_chamada(){
+    return tamanho_pilha(pilha_cham_subrot)>0;
+}
+
 void enfileira_param_int(int param_int){
     int param_len = n_digitos(param_int)+1;
     char *param = (char *) malloc( sizeof(char)*(param_len+1) );
@@ -258,14 +316,8 @@ void carrega(tipo_simbolo *simb){
     free (s_str);
     param *p;
     tipos_passagem pass;
-    if (tamanho_pilha(pilha_cham_subrot)>0){
-        tipo_simbolo *subrot = conteudo_pilha(topo(pilha_cham_subrot));
-        if (!subrot)
-            erro(ERRO_FUNC_NDECL);
-        if (subrot->base.categoria == CAT_PROC)
-            p = busca_indice_pilha(num_params_subrot, subrot->proc.params);
-        else
-            p = busca_indice_pilha(num_params_subrot, subrot->func.params);
+    if (subrot_sendo_chamada()){
+        p = param_atual_ch_subrot();
             
         if (!p) {
             erro(ERRO_NPARAM);
@@ -437,11 +489,11 @@ declara_procedimento:
         empilha(s, pilha_decl_subrot);
         enfileira_param_int(nivel_lexico);
         geraCodigo(s->proc.rotulo, "ENPR");
-        num_params_subrot=0;
+        num_params_decl_subrot=0;
     }
     params_formais PONTO_E_VIRGULA
     {
-        TS_atualiza_params(num_params_subrot, tabela_simbolos);
+        TS_atualiza_params(num_params_decl_subrot, tabela_simbolos);
     }
     bloco
     {
@@ -509,7 +561,7 @@ id_param:
         s->pf = TS_constroi_simbolo_pf(token, nivel_lexico, 0, TIPO_UNKNOWN, aux_passagem); // atualiza deslocamento e tipo depois
         TS_empilha(s, tabela_simbolos);
         conta_tipo++;
-        num_params_subrot++;
+        num_params_decl_subrot++;
     }
 ;
 
@@ -523,11 +575,11 @@ declara_funcao:
         empilha(s, pilha_decl_subrot);
         enfileira_param_int(nivel_lexico);
         geraCodigo(s->func.rotulo, "ENPR");
-        num_params_subrot=0;
+        num_params_decl_subrot=0;
     }
     params_formais DOIS_PONTOS 
     {
-        TS_atualiza_params(num_params_subrot, tabela_simbolos);
+        TS_atualiza_params(num_params_decl_subrot, tabela_simbolos);
         aux_categoria = CAT_FUNC;
     }
     tipo PONTO_E_VIRGULA bloco
@@ -729,20 +781,18 @@ comeca_if:
 
 ch_proc:
     {
-        num_params_subrot=0;
         tipo_simbolo *subrot = TS_busca_procedimento(ident, tabela_simbolos);
         if (!subrot)
             erro(ERRO_PROC_NDECL);
-        empilha(subrot, pilha_cham_subrot);
+        empilha_ch_subrot(subrot);
+        
         char *subrot_srt = TS_simbolo2str(subrot);
         debug_print("Chamando subrotina [%s]\n", subrot_srt);
         free (subrot_srt);
     }
     passa_params
     {
-        tipo_simbolo *subrot = desempilha(pilha_cham_subrot);
-        if(num_params_subrot < subrot->proc.n_params)
-            erro(ERRO_NPARAM);
+        tipo_simbolo *subrot = desempilha_ch_subrot();
         enfileira_param_string(subrot->proc.rotulo);
         enfileira_param_int(nivel_lexico);
         geraCodigo(NULL, "CHPR");
@@ -768,30 +818,14 @@ lista_params:
 param:
     expressao
     {
-        tipo_simbolo *subrot = conteudo_pilha(topo(pilha_cham_subrot));
-        if (subrot->base.categoria == CAT_PROC) {
-            if(num_params_subrot > subrot->proc.n_params)
-                erro(ERRO_NPARAM);
-            param *p = busca_indice_pilha(num_params_subrot, subrot->proc.params);
-            if ( (p->passagem == PASS_REF) && (!flag_var) ) { // se eh pass por ref e encontrou operacao
-                erro(ERRO_PARAMREF);
-            }
-            if ( $1 != p->tipo ) { // se tipo do parametro != tipo da operacao
-                erro(ERRO_TPARAM);
-            }
+        param *p = param_atual_ch_subrot();
+        if ( (p->passagem == PASS_REF) && (!flag_var) ) { // se eh pass por ref e encontrou operacao
+            erro(ERRO_PARAMREF);
         }
-        else if (subrot->base.categoria == CAT_FUNC) {
-            if(num_params_subrot > subrot->func.n_params)
-                erro(ERRO_NPARAM);
-            param *p = busca_indice_pilha(num_params_subrot, subrot->func.params);
-            if ( (p->passagem == PASS_REF) && (!flag_var) ) { // se eh pass por ref e encontrou operacao
-                erro(ERRO_PARAMREF);
-            }
-            if ( $1 != p->tipo ) { // se tipo do parametro != tipo da operacao
-                erro(ERRO_TPARAM);
-            }
+        if ( $1 != p->tipo ) { // se tipo do parametro != tipo da operacao
+            erro(ERRO_TPARAM);
         }
-        num_params_subrot++;
+        incr_params_chamados_ch_subrot();
     }
 ;
 
@@ -1096,24 +1130,23 @@ fator_com_ident_cont:
 ch_func:
     ABRE_PARENTESES
     {
-        num_params_subrot=0;
         tipo_simbolo *subrot = TS_busca_funcao(ident, tabela_simbolos);
         if (!subrot) {
             debug_print("Funcao com ident [%s] nao declarada.\n", ident);
             erro(ERRO_FUNC_NDECL);
         }
-        empilha(subrot, pilha_cham_subrot);
+        empilha_ch_subrot(subrot);
+        
         char *subrot_srt = TS_simbolo2str(subrot);
         debug_print("Chamando subrotina [%s]\n", subrot_srt);
         free (subrot_srt);
+        
         enfileira_param_int(1);
         geraCodigo(NULL, "AMEM"); // aloca espaco pra retorno da func
     }
     passa_params_func
     {
-        tipo_simbolo *subrot = desempilha(pilha_cham_subrot);
-        if(num_params_subrot < subrot->func.n_params)
-            erro(ERRO_NPARAM);
+        tipo_simbolo *subrot = desempilha_ch_subrot();
         enfileira_param_string(subrot->func.rotulo);
         enfileira_param_int(nivel_lexico);
         geraCodigo(NULL, "CHPR");

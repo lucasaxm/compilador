@@ -12,7 +12,7 @@ var m,n : integer;
     begin
         if n < 0 then 
         else 
-            f:=f(test)*f(n)+1;
+            f:=f(f*f(n)+1;
         goto 100;
     end;
 begin
