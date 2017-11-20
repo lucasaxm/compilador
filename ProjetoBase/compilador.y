@@ -393,7 +393,7 @@ void carrega(tipo_simbolo *simb){
 %token PROGRAM ABRE_PARENTESES FECHA_PARENTESES VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO T_BEGIN
 %token T_END VAR IDENT ATRIBUICAO LABEL PROCEDURE FUNCTION GOTO IF THEN ELSE WHILE INT BOOL NUMERO
 %token MULT MAIS MENOS MAIOR MENOR MAIOR_IGUAL MENOR_IGUAL DIFERENTE IGUAL OR AND NOT DIV T_TRUE
-%token T_FALSE DO
+%token T_FALSE DO READ WRITE WRITELN TEXTO
 
 %type<tipo> fator termo expressao_simples expressao fator_com_ident fator_com_ident_cont var ch_func
 
@@ -697,6 +697,7 @@ comando_sem_rotulo:
     | comando_repetitivo
     | comando_desvio
     | comando_composto
+    | io
     
     
 ;
@@ -1116,7 +1117,6 @@ fator:
 fator_com_ident:
     IDENT
     {
-        debug_print("token=[%s] token_old=[%s]\n",token,token_old);
         strncpy(ident, token, TAM_TOKEN);
         debug_print("ident=[%s]\n",ident);
     }
@@ -1168,7 +1168,6 @@ var:
     {
         s = TS_busca(ident, tabela_simbolos);
         if (s == NULL) {
-            debug_print("token=[%s] token_old=[%s]\n",token,token_old);
             debug_print("ident=[%s]\n",ident);
             erro(ERRO_VS_NDECL);
         }
@@ -1191,6 +1190,74 @@ var:
         }
         carrega(s);
         debug_print ("Regra: %s | %s\n","fator","VAR");
+    }
+;
+
+io:
+    read
+    // | write
+    // | writeln
+;
+
+read:
+    READ ABRE_PARENTESES lista_read FECHA_PARENTESES
+;
+
+lista_read:
+    lista_read VIRGULA read_var
+    | read_var
+;
+
+read_var:
+    IDENT
+    {
+        geraCodigo(NULL, "LEIT");
+        debug_print("begin leitura. token=[%s]\n", token);
+        aux_atrib.s = TS_busca(token, tabela_simbolos);
+        char *s_str;
+        if (aux_atrib.s == NULL) {
+            erro(ERRO_VS_NDECL);
+        }
+        switch (aux_atrib.s->base.categoria){
+            case CAT_ROT:
+                s_str = TS_simbolo2str(aux_atrib.s);
+                debug_print("Tentando atribuir rot [%s].\n", s_str);
+                free(s_str);
+                erro(ERRO_ATRIB);
+                break;
+            case CAT_PROC:
+                s_str = TS_simbolo2str(aux_atrib.s);
+                debug_print("Tentando atribuir proc [%s].\n", s_str);
+                free(s_str);
+                erro(ERRO_ATRIB);
+                break;
+            case CAT_FUNC:
+                // testa se to dentro de decl dessa funcao procurando na pilha de decl de subrot
+                s_str = TS_simbolo2str(aux_atrib.s);
+                no_pilha n = topo(pilha_decl_subrot);
+                tipo_simbolo *aux_s;
+                while(n){
+                    aux_s = conteudo_pilha(n);
+                    if (aux_s == aux_atrib.s) { // apontam pro mesmo lugar, sao mesmo simb
+                        debug_print("Funcao [%s] sendo decl. pode atribuir.\n", s_str);
+                        break;
+                    }
+                    n = proximo_no_pilha(n);
+                }
+                if (!n) {
+                    debug_print("Tentando atribuir para funcao [%s] fora da decl da propria.\n", s_str);
+                    free(s_str);
+                    erro(ERRO_ATRIB);
+                }
+                free(s_str);
+                    
+                aux_atrib.tipo = aux_atrib.s->func.tipo;
+                
+                break;
+            default:
+                break;
+        }
+        armazena();
     }
 ;
 

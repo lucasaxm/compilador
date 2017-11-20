@@ -13,7 +13,7 @@
 
 #include "tabela.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 #define debug_print(fmt, ...) \
         do { \
@@ -22,6 +22,7 @@
         } while (0)
 
 #define TAM_TOKEN 16
+#define TAM_TEXTO 256
 
 
 /* -------------------------------------------------------------------
@@ -29,7 +30,7 @@
  * ------------------------------------------------------------------- */
 
 extern char token[TAM_TOKEN];
-extern char token_old[TAM_TOKEN];
+extern char texto[TAM_TEXTO];
 extern int nivel_lexico;
 extern int desloc;
 extern int nl;
@@ -45,7 +46,7 @@ typedef struct schsubrot {
 } tchsubrot;
 
 char token[TAM_TOKEN];
-char token_old[TAM_TOKEN];
+char texto[TAM_TEXTO];
 char ident[TAM_TOKEN]; // var aux para armazenar token
 
 int num_vars;   // numero de vars de subrot
