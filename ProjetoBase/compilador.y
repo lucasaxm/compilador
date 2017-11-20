@@ -134,7 +134,7 @@ void erro(erros e){
         case ERRO_IFNOTBOOL:
             snprintf(msg, msg_size, "Linha %d | Resultado da expressao de um comando condificional deve ser booleano.", nl);
             break;
-        case ERRO_TIPONAOEXISTE
+        case ERRO_TIPONAOEXISTE:
             snprintf(msg, msg_size, "Linha %d | Tipo nao existe.", nl);
             break;
         default:
@@ -156,12 +156,12 @@ void empilha_ch_subrot(tipo_simbolo *subrot) {
 tipo_simbolo *desempilha_ch_subrot() {
     tchsubrot *chsubrot = desempilha(pilha_cham_subrot);
     tipo_simbolo *subrot = chsubrot->subrot;
-    if (subrot->base.categoria == CAT_PROC) {
-        if(chsubrot->params_chamados < subrot->proc.n_params)
+    if (subrot->base->categoria == CAT_PROC) {
+        if(chsubrot->params_chamados < subrot->proc->n_params)
             erro(ERRO_NPARAM);
     }
-    else if (subrot->base.categoria == CAT_FUNC) {
-        if(chsubrot->params_chamados < subrot->func.n_params)
+    else if (subrot->base->categoria == CAT_FUNC) {
+        if(chsubrot->params_chamados < subrot->func->n_params)
             erro(ERRO_NPARAM);
     }
     free(chsubrot);
@@ -174,15 +174,15 @@ param *param_atual_ch_subrot() {
     if (!chsubrot)
         return NULL;
     tipo_simbolo *subrot = chsubrot->subrot;
-    if (subrot->base.categoria == CAT_PROC) {
-        if(chsubrot->params_chamados == subrot->proc.n_params)
+    if (subrot->base->categoria == CAT_PROC) {
+        if(chsubrot->params_chamados == subrot->proc->n_params)
             return NULL;
-        p = busca_indice_pilha(chsubrot->params_chamados, subrot->proc.params);
+        p = busca_indice_pilha(chsubrot->params_chamados, subrot->proc->params);
     }
-    else if (subrot->base.categoria == CAT_FUNC) {
-        if(chsubrot->params_chamados == subrot->func.n_params)
+    else if (subrot->base->categoria == CAT_FUNC) {
+        if(chsubrot->params_chamados == subrot->func->n_params)
             return NULL;
-        p = busca_indice_pilha(chsubrot->params_chamados, subrot->func.params);
+        p = busca_indice_pilha(chsubrot->params_chamados, subrot->func->params);
     }
     return p;
 }
@@ -193,8 +193,8 @@ void incr_params_chamados_ch_subrot(){
         erro(ERRO_DESCONHECIDO);
     chsubrot->params_chamados++;
     tipo_simbolo *subrot = chsubrot->subrot;
-    if (((subrot->base.categoria == CAT_PROC) && (chsubrot->params_chamados > subrot->proc.n_params))
-    || ((subrot->base.categoria == CAT_FUNC) && (chsubrot->params_chamados > subrot->func.n_params)))
+    if (((subrot->base->categoria == CAT_PROC) && (chsubrot->params_chamados > subrot->proc->n_params))
+    || ((subrot->base->categoria == CAT_FUNC) && (chsubrot->params_chamados > subrot->func->n_params)))
     {
             erro(ERRO_NPARAM);
     }
@@ -216,20 +216,6 @@ void enfileira_param_string(char *param_string){
     char *param = (char *) malloc( sizeof(char)*(param_len+1) );
     strncpy(param, param_string, param_len+1);
     enfileira( (void *) param, parametros);
-}
-
-void valida_tipos_binario(tipos tipo1, tipos tipo2, tipos tipo_esperado){
-    debug_print("tipo1=[%d] tipo2=[%d] tipo_esperado=[%d]", tipo1, tipo2, tipo_esperado);
-    if ( (tipo1 != tipo2) || (tipo1 != tipo_esperado) ){
-        erro(ERRO_TINCOMPATIVEL);
-    }
-}
-
-void valida_tipos_unario(tipos tipo, tipos tipo_esperado){
-    debug_print("tipo=[%d] tipo_esperado=[%d]", tipo, tipo_esperado);
-    if ( tipo != tipo_esperado ){
-        erro(ERRO_TINCOMPATIVEL);
-    }
 }
 
 char *prox_rotulo(){
@@ -278,11 +264,11 @@ void armazena(){
     char *s_str = TS_simbolo2str(aux_atrib.s);
     debug_print("%s\n",s_str);
     free (s_str);
-    switch (aux_atrib.s->base.categoria){
+    switch (aux_atrib.s->base->categoria){
         case CAT_FUNC:
-            enfileira_param_int(aux_atrib.s->func.nivel_lexico);
+            enfileira_param_int(aux_atrib.s->func->nivel_lexico);
             
-            enfileira_param_int(aux_atrib.s->func.deslocamento);
+            enfileira_param_int(aux_atrib.s->func->deslocamento);
             
             if (DEBUG)
                 imprime_fila(parametros, NULL);
@@ -291,11 +277,11 @@ void armazena(){
             
             break;
         case CAT_PF:
-            enfileira_param_int(aux_atrib.s->pf.nivel_lexico);
+            enfileira_param_int(aux_atrib.s->pf->nivel_lexico);
             
-            enfileira_param_int(aux_atrib.s->pf.deslocamento);
+            enfileira_param_int(aux_atrib.s->pf->deslocamento);
             
-            if (aux_atrib.s->pf.passagem == PASS_VAL){
+            if (aux_atrib.s->pf->passagem == PASS_VAL){
                 geraCodigo(NULL, "ARMZ");
             }else{
                 geraCodigo(NULL, "ARMI");
@@ -303,9 +289,9 @@ void armazena(){
             
             break;
         case CAT_VS:
-            enfileira_param_int(aux_atrib.s->vs.nivel_lexico);
+            enfileira_param_int(aux_atrib.s->vs->nivel_lexico);
             
-            enfileira_param_int(aux_atrib.s->vs.deslocamento);
+            enfileira_param_int(aux_atrib.s->vs->deslocamento);
             
             geraCodigo(NULL, "ARMZ");
             
@@ -336,18 +322,18 @@ void carrega(tipo_simbolo *simb){
     else {
         pass = PASS_VAL;
     }
-    switch (simb->base.categoria){
+    switch (simb->base->categoria){
         case CAT_PF:
-            enfileira_param_int(simb->pf.nivel_lexico);
-            enfileira_param_int(simb->pf.deslocamento);
-            if (simb->pf.passagem == PASS_VAL){ // PF VLR
+            enfileira_param_int(simb->pf->nivel_lexico);
+            enfileira_param_int(simb->pf->deslocamento);
+            if (simb->pf->passagem == PASS_VAL){ // PF VLR
                 debug_print("%s\n","Simbolo eh PF VLR");
                 if (pass == PASS_VAL)
                     geraCodigo(NULL, "CRVL");
                 else if (pass == PASS_REF)
                     geraCodigo(NULL, "CREN");
             }
-            else if (simb->pf.passagem == PASS_REF){ // PF REF
+            else if (simb->pf->passagem == PASS_REF){ // PF REF
                 debug_print("%s\n","Simbolo eh PF REF");
                 if (pass == PASS_VAL)
                     geraCodigo(NULL, "CRVI");
@@ -357,8 +343,8 @@ void carrega(tipo_simbolo *simb){
             break;
         case CAT_VS:
             debug_print("%s\n","Simbolo eh VS");
-            enfileira_param_int(simb->vs.nivel_lexico);
-            enfileira_param_int(simb->vs.deslocamento);
+            enfileira_param_int(simb->vs->nivel_lexico);
+            enfileira_param_int(simb->vs->deslocamento);
             if (pass == PASS_VAL)
                 geraCodigo(NULL, "CRVL");
             else if (pass == PASS_REF)
@@ -368,11 +354,11 @@ void carrega(tipo_simbolo *simb){
             debug_print("%s\n","Simbolo eh FUNC");
             if (pass == PASS_REF)
                 erro(ERRO_PARAMREF);
-            if(simb->func.n_params > 0)
+            if(simb->func->n_params > 0)
                 erro(ERRO_NPARAM);
             enfileira_param_int(1);
             geraCodigo(NULL, "AMEM"); // aloca espaco para ret da func
-            enfileira_param_string(simb->func.rotulo);
+            enfileira_param_string(simb->func->rotulo);
             enfileira_param_int(nivel_lexico);
             geraCodigo(NULL, "CHPR");
             break;
@@ -389,7 +375,7 @@ void carrega(tipo_simbolo *simb){
 
 
 %union {
-    simbolo_type tipo;
+    tipo_simbolo *tipo;
 }
 
 
@@ -422,12 +408,12 @@ programa :
         geraCodigo (NULL, "INPP");
         
         tipo_simbolo *tipo_primitivo = malloc(sizeof(tipo_simbolo));
-        tipo_primitivo->type = TS_constroi_simbolo_type("integer", TIPO_INT);
-        TS_empilha(tipo_primitivo);
+        tipo_primitivo->type = TS_constroi_simbolo_type("integer", nivel_lexico, TIPO_INT);
+        TS_empilha(tipo_primitivo, tabela_simbolos);
         
         tipo_primitivo = malloc(sizeof(tipo_simbolo));
-        tipo_primitivo->type = TS_constroi_simbolo_type("boolean", TIPO_BOOL);
-        TS_empilha(tipo_primitivo);
+        tipo_primitivo->type = TS_constroi_simbolo_type("boolean", nivel_lexico, TIPO_BOOL);
+        TS_empilha(tipo_primitivo, tabela_simbolos);
     }
     PROGRAM IDENT 
     ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA
@@ -481,7 +467,8 @@ id_tipo:
     IDENT
     {
         tipo_simbolo *simb_type = (tipo_simbolo *) malloc (sizeof(tipo_simbolo));
-        simb_type->type = TS_constroi_simbolo_type(token, TIPO_UNKNOWN);
+        simb_type->type = TS_constroi_simbolo_type(token, nivel_lexico, TIPO_UNKNOWN);
+        empilha(simb_type, tabela_simbolos);
     }
     IGUAL
     {
@@ -527,7 +514,7 @@ declara_procedimento:
         TS_empilha(s, tabela_simbolos);
         empilha(s, pilha_decl_subrot);
         enfileira_param_int(nivel_lexico);
-        geraCodigo(s->proc.rotulo, "ENPR");
+        geraCodigo(s->proc->rotulo, "ENPR");
         num_params_decl_subrot=0;
     }
     params_formais PONTO_E_VIRGULA
@@ -546,11 +533,11 @@ declara_procedimento:
         
         int num_params;
         
-        if (subrot->base.categoria == CAT_PROC){
-            enfileira_param_int(num_params = subrot->proc.n_params);
+        if (subrot->base->categoria == CAT_PROC){
+            enfileira_param_int(num_params = subrot->proc->n_params);
         }
         else
-            enfileira_param_int(num_params = subrot->func.n_params);
+            enfileira_param_int(num_params = subrot->func->n_params);
         geraCodigo(NULL, "RTPR");
         TS_remove_rtpr(desempilha(pilha_decl_subrot), tabela_simbolos);
         nivel_lexico--;
@@ -614,7 +601,7 @@ declara_funcao:
         TS_empilha(s, tabela_simbolos);
         empilha(s, pilha_decl_subrot);
         enfileira_param_int(nivel_lexico);
-        geraCodigo(s->func.rotulo, "ENPR");
+        geraCodigo(s->func->rotulo, "ENPR");
         num_params_decl_subrot=0;
     }
     params_formais DOIS_PONTOS 
@@ -632,11 +619,11 @@ declara_funcao:
         empilha(subrot, pilha_decl_subrot);
         enfileira_param_int(nivel_lexico);
         
-        if (subrot->base.categoria == CAT_PROC){
-            enfileira_param_int(subrot->proc.n_params);
+        if (subrot->base->categoria == CAT_PROC){
+            enfileira_param_int(subrot->proc->n_params);
         }
         else
-            enfileira_param_int(subrot->func.n_params);
+            enfileira_param_int(subrot->func->n_params);
         geraCodigo(NULL, "RTPR");
         TS_remove_rtpr(desempilha(pilha_decl_subrot), tabela_simbolos);
         nivel_lexico--;
@@ -719,7 +706,7 @@ rotulo:
             erro(ERRO_ROT_NDECL);
         enfileira_param_int(nivel_lexico);
         enfileira_param_int(TS_conta_vs(nivel_lexico, tabela_simbolos));
-        geraCodigo(simb_rot->rot.rotulo, "ENRT");
+        geraCodigo(simb_rot->rot->rotulo, "ENRT");
     }
     DOIS_PONTOS
 ;
@@ -739,10 +726,10 @@ comando_desvio:
     GOTO NUMERO
     {
         tipo_simbolo *simb_rot = TS_busca(token, tabela_simbolos);
-        if ( (!simb_rot) || (simb_rot->base.categoria != CAT_ROT) )
+        if ( (!simb_rot) || (simb_rot->base->categoria != CAT_ROT) )
             erro(ERRO_ROT_NDECL);
-        enfileira_param_string(simb_rot->rot.rotulo);
-        enfileira_param_int(simb_rot->rot.nivel_lexico);
+        enfileira_param_string(simb_rot->rot->rotulo);
+        enfileira_param_int(simb_rot->rot->nivel_lexico);
         enfileira_param_int(nivel_lexico);
         geraCodigo(NULL, "DSVR");
     }
@@ -768,7 +755,7 @@ comando_condicional:
     }
     | IF expressao THEN comeca_if comando ELSE
     {
-        if ($2 != TIPO_BOOL)
+        if ($2->type->tipo != TIPO_BOOL)
             erro(ERRO_IFNOTBOOL);
         char *rot_comeco_else = desempilha(pilha_rotulos_cond);
         char *rot_fim_else = prox_rotulo();
@@ -831,7 +818,7 @@ ch_proc:
     passa_params
     {
         tipo_simbolo *subrot = desempilha_ch_subrot();
-        enfileira_param_string(subrot->proc.rotulo);
+        enfileira_param_string(subrot->proc->rotulo);
         enfileira_param_int(nivel_lexico);
         geraCodigo(NULL, "CHPR");
     }
@@ -875,12 +862,12 @@ atrib:
         if (aux_atrib.s == NULL) {
             erro(ERRO_VS_NDECL);
         }
-        switch (aux_atrib.s->base.categoria){
+        switch (aux_atrib.s->base->categoria){
             case CAT_PF:
-                aux_atrib.tipo = aux_atrib.s->pf.tipo;
+                aux_atrib.tipo = aux_atrib.s->pf->tipo;
                 break;
             case CAT_VS:
-                aux_atrib.tipo = aux_atrib.s->vs.tipo;
+                aux_atrib.tipo = aux_atrib.s->vs->tipo;
                 break;
             case CAT_FUNC:
                 // testa se to dentro de decl dessa funcao procurando na pilha de decl de subrot
@@ -902,7 +889,7 @@ atrib:
                 }
                 free(s_str);
                     
-                aux_atrib.tipo = aux_atrib.s->func.tipo;
+                aux_atrib.tipo = aux_atrib.s->func->tipo;
                 
                 break;
             default:
@@ -913,7 +900,7 @@ atrib:
     ATRIBUICAO expressao
     {
         char *aux_atrib_simb_str = TS_simbolo2str(aux_atrib.s);
-        debug_print ("Regra: %s | tipo_ident=[%d] tipo_expressao=[%d]\n","atrib", aux_atrib.tipo, $3);
+        debug_print ("Regra: %s | tipo_ident=[%s] tipo_expressao=[%s]\n","atrib", aux_atrib.tipo->type->identificador, $3->type->identificador);
         debug_print ("Simbolo recipiente: %s\n", aux_atrib_simb_str);
         free (aux_atrib_simb_str);
         if ( $3 != aux_atrib.tipo ) {
@@ -929,14 +916,14 @@ atrib:
 expressao:
     expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp=[%d]\n","expressao","EXP_SIMP", $1);
+        debug_print ("Regra: %s | %s | tipo_expsimp=[%s]\n","expressao","EXP_SIMP", $1->type->identificador);
         $$ = $1;
     }
     | expressao_simples IGUAL expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","IGUAL", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%s] tipo_expsimp2=[%s]\n","expressao","IGUAL", $1->type->identificador, $3->type->identificador);
         if ($1 == $3){
-            $$ = TIPO_BOOL;
+            $$ = TS_busca("boolean", tabela_simbolos);
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
@@ -945,9 +932,9 @@ expressao:
     }
     | expressao_simples DIFERENTE expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","DIFERENTE", $1, $3);
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%s] tipo_expsimp2=[%s]\n","expressao","DIFERENTE", $1->type->identificador, $3->type->identificador);
         if ($1 == $3){
-            $$ = TIPO_BOOL;
+            $$ = TS_busca("boolean", tabela_simbolos);
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
@@ -956,9 +943,9 @@ expressao:
     }
     | expressao_simples MENOR expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
-            $$ = TIPO_BOOL;
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%s] tipo_expsimp2=[%s]\n","expressao","MENOR", $1->type->identificador, $3->type->identificador);
+        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
+            $$ = TS_busca("boolean", tabela_simbolos);
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
@@ -967,9 +954,9 @@ expressao:
     }
     | expressao_simples MENOR_IGUAL expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR_IGUAL", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
-            $$ = TIPO_BOOL;
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%s] tipo_expsimp2=[%s]\n","expressao","MENOR_IGUAL", $1->type->identificador, $3->type->identificador);
+        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
+            $$ = TS_busca("boolean", tabela_simbolos);
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
@@ -978,9 +965,9 @@ expressao:
     }
     | expressao_simples MAIOR_IGUAL expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR_IGUAL", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
-            $$ = TIPO_BOOL;
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%s] tipo_expsimp2=[%s]\n","expressao","MAIOR_IGUAL", $1->type->identificador, $3->type->identificador);
+        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
+            $$ = TS_busca("boolean", tabela_simbolos);
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
@@ -989,9 +976,9 @@ expressao:
     }
     | expressao_simples MAIOR expressao_simples
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
-            $$ = TIPO_BOOL;
+        debug_print ("Regra: %s | %s | tipo_expsimp1=[%s] tipo_expsimp2=[%s]\n","expressao","MAIOR", $1->type->identificador, $3->type->identificador);
+        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
+            $$ = TS_busca("boolean", tabela_simbolos);
         } else {
             erro(ERRO_TINCOMPATIVEL);
         }
@@ -1003,8 +990,8 @@ expressao:
 expressao_simples:
     MAIS termo
     {
-        debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO POS", $2);
-        if ( ($2 == TIPO_INT) ){
+        debug_print ("Regra: %s | %s | tipo_termo=[%s]\n","expressao_simples","TERMO POS", $2->type->identificador);
+        if ( ($2->type->tipo == TIPO_INT) ){
             $$ = $2;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1012,8 +999,8 @@ expressao_simples:
     }
     | MENOS termo
     {
-        debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO NEG", $2);
-        if ( ($2 == TIPO_INT) ){
+        debug_print ("Regra: %s | %s | tipo_termo=[%s]\n","expressao_simples","TERMO NEG", $2->type->identificador);
+        if ( ($2->type->tipo == TIPO_INT) ){
             $$ = $2;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1023,13 +1010,13 @@ expressao_simples:
     }
     | termo
     {
-        debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO", $1);
+        debug_print ("Regra: %s | %s | tipo_termo=[%s]\n","expressao_simples","TERMO", $1->type->identificador);
         $$ = $1;
     }
     | expressao_simples MAIS termo
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SOMA", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
+        debug_print ("Regra: %s | %s | tipo_expsimp=[%s] tipo_termo=[%s]\n","expressao_simples","SOMA", $1->type->identificador, $3->type->identificador);
+        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1039,8 +1026,8 @@ expressao_simples:
     }
     | expressao_simples MENOS termo
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SUBT", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
+        debug_print ("Regra: %s | %s | tipo_expsimp=[%s] tipo_termo=[%s]\n","expressao_simples","SUBT", $1->type->identificador, $3->type->identificador);
+        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1050,8 +1037,8 @@ expressao_simples:
     }
     | expressao_simples OR termo
     {
-        debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","OR", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_BOOL) ){
+        debug_print ("Regra: %s | %s | tipo_expsimp=[%s] tipo_termo=[%s]\n","expressao_simples","OR", $1->type->identificador, $3->type->identificador);
+        if ( ($1 == $3) && ($1->type->tipo == TIPO_BOOL) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1064,13 +1051,13 @@ expressao_simples:
 termo:
     fator 
     {
-        debug_print ("Regra: %s | %s | tipo_fator=[%d]\n","termo","FATOR", $1);
+        debug_print ("Regra: %s | %s | tipo_fator=[%s]\n","termo","FATOR", $1->type->identificador);
         $$ = $1;
     }
     | termo MULT fator 
     {
-        debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","MULT", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
+        debug_print ("Regra: %s | %s | tipo_termo=[%s] tipo_fator=[%s]\n","termo","MULT", $1->type->identificador, $3->type->identificador);
+        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1080,8 +1067,8 @@ termo:
     }
     | termo DIV fator 
     {
-        debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","DIV", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
+        debug_print ("Regra: %s | %s | tipo_termo=[%s] tipo_fator=[%s]\n","termo","DIV", $1->type->identificador, $3->type->identificador);
+        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1091,8 +1078,8 @@ termo:
     }
     | termo AND fator 
     {
-        debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","AND", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_BOOL) ){
+        debug_print ("Regra: %s | %s | tipo_termo=[%s] tipo_fator=[%s]\n","termo","AND", $1->type->identificador, $3->type->identificador);
+        if ( ($1 == $3) && ($1->type->tipo == TIPO_BOOL) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1110,7 +1097,7 @@ fator:
     }
     | NUMERO
     {
-        $$ = TIPO_INT;
+        $$ = TS_busca_tipo("integer", tabela_simbolos);
         enfileira_param_string(token);
         geraCodigo(NULL, "CRCT");
         flag_var=0;
@@ -1118,7 +1105,7 @@ fator:
     }
     | NOT fator
     {
-        if ($2 == TIPO_BOOL) {
+        if ($2->type->tipo == TIPO_BOOL) {
                 $$ = $2;
         }
         else {
@@ -1130,7 +1117,7 @@ fator:
     }
     | T_TRUE
     {
-        $$ = TIPO_BOOL;
+        $$ = TS_busca("boolean", tabela_simbolos);
         enfileira_param_int(1);
         geraCodigo(NULL, "CRCT");
         flag_var=0;
@@ -1138,7 +1125,7 @@ fator:
     }
     | T_FALSE
     {
-        $$ = TIPO_BOOL;
+        $$ = TS_busca("boolean", tabela_simbolos);
         enfileira_param_int(0);
         geraCodigo(NULL, "CRCT");
         flag_var=0;
@@ -1184,10 +1171,10 @@ ch_func:
     passa_params_func
     {
         tipo_simbolo *subrot = desempilha_ch_subrot();
-        enfileira_param_string(subrot->func.rotulo);
+        enfileira_param_string(subrot->func->rotulo);
         enfileira_param_int(nivel_lexico);
         geraCodigo(NULL, "CHPR");
-        $$ = subrot->func.tipo;
+        $$ = subrot->func->tipo;
     }
 ;
 
@@ -1204,17 +1191,17 @@ var:
             debug_print("ident=[%s]\n",ident);
             erro(ERRO_VS_NDECL);
         }
-        switch (s->base.categoria){
+        switch (s->base->categoria){
             case CAT_PF:
-                $$ = s->pf.tipo;
+                $$ = s->pf->tipo;
                 flag_var=1;
                 break;
             case CAT_VS:
-                $$ = s->vs.tipo;
+                $$ = s->vs->tipo;
                 flag_var=1;
                 break;
             case CAT_FUNC:
-                $$ = s->func.tipo;
+                $$ = s->func->tipo;
                 flag_var=0;
                 break;
             default:
@@ -1267,7 +1254,7 @@ read_var:
         if (aux_atrib.s == NULL) {
             erro(ERRO_VS_NDECL);
         }
-        switch (aux_atrib.s->base.categoria){
+        switch (aux_atrib.s->base->categoria){
             case CAT_ROT:
                 s_str = TS_simbolo2str(aux_atrib.s);
                 debug_print("Tentando atribuir rot [%s].\n", s_str);
@@ -1300,7 +1287,7 @@ read_var:
                 }
                 free(s_str);
                     
-                aux_atrib.tipo = aux_atrib.s->func.tipo;
+                aux_atrib.tipo = aux_atrib.s->func->tipo;
                 
                 break;
             default:

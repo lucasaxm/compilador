@@ -8,7 +8,7 @@
 #include "compilador.tab.h"
 
 // #define IMPRIME(STR) {};
-// #define IMPRIME(STR) printf("%s    # %s \n", STR, token);
+#define IMPRIME(STR) printf("%s    # %s \n", STR, token);
 
 int nl = 1;  
 
@@ -30,19 +30,19 @@ comentario "(*".*"*)"
 
 read {
     strncpy (token, yytext, TAM_TOKEN);
-    //   IMPRIME("read ");
+      IMPRIME("read ");
     return READ;
 }
 
 write {
     strncpy (token, yytext, TAM_TOKEN);
-    //   IMPRIME("read ");
+      IMPRIME("read ");
     return WRITE;
 }
 
 writeln {
     strncpy (token, yytext, TAM_TOKEN);
-    //   IMPRIME("read ");
+      IMPRIME("read ");
     return WRITELN;
 }
 
@@ -57,243 +57,243 @@ writeln {
 program {
     // Regra 1
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("program ");
+    IMPRIME("program ");
     return PROGRAM;
 }
 
 label {
     // Regra 3
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("label ");
+    IMPRIME("label ");
     return LABEL;
 }
 
 var {
     // Regra 8
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("var  ");
+    IMPRIME("var  ");
     return VAR;
 }
 
 procedure {
     // Regra 12
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("procedure  ");
+    IMPRIME("procedure  ");
     return PROCEDURE;
 }
 
 function {
     // Regra 13
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("function  ");
+    IMPRIME("function  ");
     return FUNCTION;
 }
 
 begin {
     // Regra 16
           strncpy (token, yytext, TAM_TOKEN);
-        //   IMPRIME("begin ");
+          IMPRIME("begin ");
           return T_BEGIN;
  }
 
 end {
     // Regra 16
           strncpy (token, yytext, TAM_TOKEN);
-        //   IMPRIME("end  ");
+          IMPRIME("end  ");
           return T_END;
  }
 
 goto {
     // Regra 21
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("goto  ");
+    IMPRIME("goto  ");
     return GOTO;
 }
 
 if {
     // Regra 22
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("if  ");
+    IMPRIME("if  ");
     return IF;
 }
 
 then {
     // Regra 22
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("then  ");
+    IMPRIME("then  ");
     return THEN;
 }
 
 else {
     // Regra 22
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("else  ");
+    IMPRIME("else  ");
     return ELSE;
 }
 
 while {
     // Regra 23
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("while  ");
+    IMPRIME("while  ");
     return WHILE;
 }
 
 do {
     // Regra 23
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME("do  ");
+    IMPRIME("do  ");
     return DO;
 }
 
 := {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" atribuicao  ");
+    IMPRIME(" atribuicao  ");
     return ATRIBUICAO;  
  }
 
 \; {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" pt_virgula  ");
+    IMPRIME(" pt_virgula  ");
     return PONTO_E_VIRGULA;
  }
 
 \: {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" dois pontos ");
+    IMPRIME(" dois pontos ");
     return DOIS_PONTOS;
  }
 
 \, {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" virgula  ");
+    IMPRIME(" virgula  ");
     return VIRGULA;
  }
 
 
 \. {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" ponto  ");
+    IMPRIME(" ponto  ");
     return PONTO; 
     }
 
 \(  {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" abre_parenteses  ");
+    IMPRIME(" abre_parenteses  ");
     return ABRE_PARENTESES;
     }
 
 \)  {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" fecha_parenteses ");
+    IMPRIME(" fecha_parenteses ");
     return FECHA_PARENTESES;
  }
 
 \* { 
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" * ");
+    IMPRIME(" * ");
     return MULT;
  }
 
 \+ { 
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" + ");
+    IMPRIME(" + ");
     return MAIS;
  }
 
 \- { 
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" - ");
+    IMPRIME(" - ");
     return MENOS;
  }
 
 
 \>  { 
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" > ");
+  IMPRIME(" > ");
   return MAIOR;
 }
 
 \<  { 
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" < ");
+  IMPRIME(" < ");
   return MENOR;
 }
 
 \>=  { 
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" >=");
+  IMPRIME(" >=");
   return MAIOR_IGUAL;
 }
 
 \<=  { 
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" <= ");
+  IMPRIME(" <= ");
   return MENOR_IGUAL;
 }
 
 \<> { 
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" <> ");
+  IMPRIME(" <> ");
   return DIFERENTE;
 }
 
 \=  { 
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" == ");
+  IMPRIME(" == ");
   return IGUAL;
 }
 
 or {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" or ");
+    IMPRIME(" or ");
     return OR;
 }
 
 and {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" and ");
+    IMPRIME(" and ");
     return AND;
 }
 
 NOT {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" NOT ");
+    IMPRIME(" NOT ");
     return NOT;
 }
 
 div {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" div ");
+    IMPRIME(" div ");
     return DIV;
 }
 
 true {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" true ");
+    IMPRIME(" true ");
     return T_TRUE;
 }
 
 false { 
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" false ");
+    IMPRIME(" false ");
     return T_FALSE;
 }
 
 type {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" type ");
-    return T_FALSE;
+    IMPRIME(" type ");
+    return TYPE;
 }
 
 {ident} {
     strncpy (token, yytext, TAM_TOKEN);
-    // IMPRIME(" ident  ");
+    IMPRIME(" ident  ");
     return IDENT;
 }
 
 {numero} {
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" numero  ");
+  IMPRIME(" numero  ");
   return NUMERO;
 }
 

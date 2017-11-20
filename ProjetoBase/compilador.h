@@ -13,7 +13,7 @@
 
 #include "tabela.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 #define debug_print(fmt, ...) \
         do { \
@@ -37,7 +37,7 @@ extern int nl;
 
 typedef struct aux_atrib {
     tipo_simbolo *s;
-    tipos tipo;
+    tipo_simbolo *tipo;
 } taux_atrib;
 
 typedef struct schsubrot {
