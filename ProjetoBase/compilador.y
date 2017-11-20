@@ -525,6 +525,7 @@ declara_procedimento:
 params_formais:
     ABRE_PARENTESES declara_params FECHA_PARENTESES
     | ABRE_PARENTESES FECHA_PARENTESES
+    | %empty
 ;
 
 declara_params: declara_params PONTO_E_VIRGULA declara_param 
@@ -1201,14 +1202,18 @@ io:
 
 write:
     WRITE ABRE_PARENTESES lista_write FECHA_PARENTESES
-    {
-        geraCodigo(NULL, "IMPR");
-    }
 ;
 
 lista_write:
     lista_write VIRGULA expressao
-    | expressao
+    {
+        geraCodigo(NULL, "IMPR");
+    }
+    |
+    expressao
+    {
+        geraCodigo(NULL, "IMPR");
+    }
 ;
 
 read:
