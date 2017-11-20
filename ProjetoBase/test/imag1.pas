@@ -4,7 +4,7 @@ var im : imaginario;
 begin
    x := 2;
    im := 2i;
-   (* Erros a detectar - nível 0*)
+   (* Erros a detectar - nÃ­vel 0*)
    x := im;
    im := x;
 end.

@@ -8,7 +8,7 @@
 #include "compilador.tab.h"
 
 // #define IMPRIME(STR) {};
-// #define IMPRIME(STR) printf("%s    # %s \n", STR, token);
+#define IMPRIME(STR) printf("%s    # %s \n", STR, token);
 
 int nl = 1;  
 
@@ -24,33 +24,30 @@ ident [a-zAZ][a-zAZ1-9]*
 
 numero [0-9]+
 
-comentario "(*".*"*)"
+numeroI [0-9]+[i]
 
-texto "\""[a-zAZ0-9 \'\\\.\:\=\;\,\|\[\]\{\}\*\+\-\<\>\(\)\%\$\#\@\!]*"\""
+comentario "(*".*"*)"
 
 %%
 
-{texto} {
-    strncpy (texto, yytext, TAM_TEXTO);
-    // IMPRIME("texto ");
-    return TEXTO;
-}
-
 read {
     strncpy (token, yytext, TAM_TOKEN);
-    //   IMPRIME("read ");
+    if (DEBUG)
+      IMPRIME("read ");
     return READ;
 }
 
 write {
     strncpy (token, yytext, TAM_TOKEN);
-    //   IMPRIME("read ");
+    if (DEBUG)
+      IMPRIME("read ");
     return WRITE;
 }
 
 writeln {
     strncpy (token, yytext, TAM_TOKEN);
-    //   IMPRIME("read ");
+    if (DEBUG)
+      IMPRIME("read ");
     return WRITELN;
 }
 
@@ -100,14 +97,16 @@ function {
 begin {
     // Regra 16
           strncpy (token, yytext, TAM_TOKEN);
-        //   IMPRIME("begin ");
+          if (DEBUG)
+          IMPRIME("begin ");
           return T_BEGIN;
  }
 
 end {
     // Regra 16
           strncpy (token, yytext, TAM_TOKEN);
-        //   IMPRIME("end  ");
+          if (DEBUG)
+          IMPRIME("end  ");
           return T_END;
  }
 
@@ -229,37 +228,43 @@ boolean {
 
 \>  { 
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" > ");
+  if (DEBUG)
+  IMPRIME(" > ");
   return MAIOR;
 }
 
 \<  { 
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" < ");
+  if (DEBUG)
+  IMPRIME(" < ");
   return MENOR;
 }
 
 \>=  { 
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" >=");
+  if (DEBUG)
+  IMPRIME(" >=");
   return MAIOR_IGUAL;
 }
 
 \<=  { 
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" <= ");
+  if (DEBUG)
+  IMPRIME(" <= ");
   return MENOR_IGUAL;
 }
 
 \<> { 
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" <> ");
+  if (DEBUG)
+  IMPRIME(" <> ");
   return DIFERENTE;
 }
 
 \=  { 
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" == ");
+  if (DEBUG)
+  IMPRIME(" == ");
   return IGUAL;
 }
 
@@ -299,17 +304,32 @@ false {
     return T_FALSE;
 }
 
+imaginario {
+    strncpy (token, yytext, TAM_TOKEN);
+    // IMPRIME("boolean  ");
+    return IMAG;
+}
+
 {ident} {
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" ident  ");
     return IDENT;
 }
 
+{numeroI} {
+  strncpy (token, yytext, TAM_TOKEN);
+  if (DEBUG)
+  IMPRIME(" numeroI  ");
+  return NUMEROIMAG;
+}
+
 {numero} {
   strncpy (token, yytext, TAM_TOKEN);
-//   IMPRIME(" numero  ");
+  if (DEBUG)
+  IMPRIME(" numero  ");
   return NUMERO;
 }
+
 
 %%
 

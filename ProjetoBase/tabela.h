@@ -28,7 +28,7 @@ typedef enum tipos_passagem {
 } tipos_passagem;
 
 typedef enum tipos {
-  TIPO_INT, TIPO_BOOL, TIPO_UNKNOWN
+  TIPO_INT, TIPO_BOOL, TIPO_IMAG, TIPO_UNKNOWN
 } tipos;
 
 typedef struct param {

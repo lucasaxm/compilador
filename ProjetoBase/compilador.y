@@ -393,7 +393,7 @@ void carrega(tipo_simbolo *simb){
 %token PROGRAM ABRE_PARENTESES FECHA_PARENTESES VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO T_BEGIN
 %token T_END VAR IDENT ATRIBUICAO LABEL PROCEDURE FUNCTION GOTO IF THEN ELSE WHILE INT BOOL NUMERO
 %token MULT MAIS MENOS MAIOR MENOR MAIOR_IGUAL MENOR_IGUAL DIFERENTE IGUAL OR AND NOT DIV T_TRUE
-%token T_FALSE DO READ WRITE WRITELN TEXTO
+%token T_FALSE DO READ WRITE WRITELN NUMEROIMAG IMAG
 
 %type<tipo> fator termo expressao_simples expressao fator_com_ident fator_com_ident_cont var ch_func
 
@@ -636,6 +636,10 @@ tipo :
     | INT
     {
         TS_atualiza_tipos(TIPO_INT, aux_categoria, tabela_simbolos);
+    }
+    | IMAG
+    {
+        TS_atualiza_tipos(TIPO_IMAG, aux_categoria, tabela_simbolos);
     }
 ;
 
@@ -925,7 +929,7 @@ expressao:
     | expressao_simples MENOR expressao_simples
     {
         debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
+        if (( ($1 == $3) && ($1 == TIPO_INT) ) || ( ($1 == $3) && ($1 == TIPO_IMAG) )){
             $$ = TIPO_BOOL;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -936,7 +940,7 @@ expressao:
     | expressao_simples MENOR_IGUAL expressao_simples
     {
         debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MENOR_IGUAL", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
+        if (( ($1 == $3) && ($1 == TIPO_INT) ) || ( ($1 == $3) && ($1 == TIPO_IMAG) )){
             $$ = TIPO_BOOL;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -947,7 +951,7 @@ expressao:
     | expressao_simples MAIOR_IGUAL expressao_simples
     {
         debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR_IGUAL", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
+        if (( ($1 == $3) && ($1 == TIPO_INT) ) || ( ($1 == $3) && ($1 == TIPO_IMAG) )){
             $$ = TIPO_BOOL;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -958,7 +962,7 @@ expressao:
     | expressao_simples MAIOR expressao_simples
     {
         debug_print ("Regra: %s | %s | tipo_expsimp1=[%d] tipo_expsimp2=[%d]\n","expressao","MAIOR", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
+        if (( ($1 == $3) && ($1 == TIPO_INT) ) || ( ($1 == $3) && ($1 == TIPO_IMAG) )){
             $$ = TIPO_BOOL;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -972,7 +976,7 @@ expressao_simples:
     MAIS termo
     {
         debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO POS", $2);
-        if ( ($2 == TIPO_INT) ){
+        if ( ($2 == TIPO_INT) || ($2 == TIPO_IMAG) ){
             $$ = $2;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -981,7 +985,7 @@ expressao_simples:
     | MENOS termo
     {
         debug_print ("Regra: %s | %s | tipo_termo=[%d]\n","expressao_simples","TERMO NEG", $2);
-        if ( ($2 == TIPO_INT) ){
+        if ( ($2 == TIPO_INT) || ($2 == TIPO_IMAG) ){
             $$ = $2;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -997,7 +1001,7 @@ expressao_simples:
     | expressao_simples MAIS termo
     {
         debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SOMA", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
+        if (( ($1 == $3) && ($1 == TIPO_INT) ) || ( ($1 == $3) && ($1 == TIPO_IMAG) )){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1008,7 +1012,7 @@ expressao_simples:
     | expressao_simples MENOS termo
     {
         debug_print ("Regra: %s | %s | tipo_expsimp=[%d] tipo_termo=[%d]\n","expressao_simples","SUBT", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
+        if (( ($1 == $3) && ($1 == TIPO_INT) ) || ( ($1 == $3) && ($1 == TIPO_IMAG) )){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1038,7 +1042,7 @@ termo:
     | termo MULT fator 
     {
         debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","MULT", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
+        if (( ($1 == $3) && ($1 == TIPO_INT) ) || ( ($1 == $3) && ($1 == TIPO_IMAG) )){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1049,7 +1053,7 @@ termo:
     | termo DIV fator 
     {
         debug_print ("Regra: %s | %s | tipo_termo=[%d] tipo_fator=[%d]\n","termo","DIV", $1, $3);
-        if ( ($1 == $3) && ($1 == TIPO_INT) ){
+        if (( ($1 == $3) && ($1 == TIPO_INT) ) || ( ($1 == $3) && ($1 == TIPO_IMAG) )){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1083,6 +1087,14 @@ fator:
         geraCodigo(NULL, "CRCT");
         flag_var=0;
         debug_print ("Regra: %s | %s\n","fator","NUMERO");
+    }
+    | NUMEROIMAG
+    {
+        $$ = TIPO_IMAG;
+        enfileira_param_string(token);
+        geraCodigo(NULL, "CRCT");
+        flag_var=0;
+        debug_print ("Regra: %s | %s\n","fator","NUMEROIMAG");
     }
     | NOT fator
     {

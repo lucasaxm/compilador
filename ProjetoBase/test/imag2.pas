@@ -5,13 +5,13 @@ var im : imaginario;
 function f (im1 : imaginario):imaginario;
 begin
    f := im1 + 2i;
-end
+end;
 
 
 begin
    x := 2;
    im := f(2i);
-   (* Erros a detectar - nível 1 *)
+   (* Erros a detectar - nÃ­vel 1 *)
    if (x = im) then
       x := 1;
 end.
