@@ -371,6 +371,7 @@ programa :
 ;
 
 bloco : 
+    parte_declara_rotulos
     parte_declara_vars
     {
         aloca_mem();
@@ -398,11 +399,24 @@ lista_idents: lista_idents VIRGULA IDENT
             | IDENT
 ;
 
+parte_declara_rotulos:
+    LABEL lista_labels PONTO_E_VIRGULA
+    | %empty
+;
 
-// lista_vars:
-//     lista_vars VIRGULA var
-//     | var
-// ;
+lista_labels:
+    lista_labels VIRGULA novo_label
+    | novo_label
+;
+
+novo_label:
+    NUMERO
+    {
+        tipo_simbolo *simb_rotulo = (tipo_simbolo *)malloc(sizeof(tipo_simbolo));
+        simb_rotulo->rot = TS_constroi_simbolo_rot(token, nivel_lexico, prox_rotulo());
+        TS_empilha(simb_rotulo, tabela_simbolos);
+    }
+;
 
 var:
     IDENT
@@ -529,13 +543,11 @@ declara_funcao:
         empilha(subrot, pilha_decl_subrot);
         enfileira_param_int(nivel_lexico);
         
-        int num_params;
-        
         if (subrot->base.categoria == CAT_PROC){
-            enfileira_param_int(num_params = subrot->proc.n_params);
+            enfileira_param_int(subrot->proc.n_params);
         }
         else
-            enfileira_param_int(num_params = subrot->func.n_params);
+            enfileira_param_int(subrot->func.n_params);
         geraCodigo(NULL, "RTPR");
         TS_remove_rtpr(desempilha(pilha_decl_subrot), tabela_simbolos);
         nivel_lexico--;
@@ -608,24 +620,46 @@ comandos:
 ;
 
 comando:
-    LABEL
-    {
-        has_label=1;
-    }
-    comando_sem_rotulo
-    {
-        has_label=0;
-    }
+    rotulo comando_sem_rotulo
     | comando_sem_rotulo
     | %empty
+;
+
+rotulo:
+    NUMERO
+    {
+        tipo_simbolo *simb_rot = TS_busca(token, tabela_simbolos);
+        if (!simb_rot)
+            erro(ERRO_ROT_NDECL);
+        enfileira_param_int(nivel_lexico);
+        enfileira_param_int(TS_conta_vs(nivel_lexico, tabela_simbolos));
+        geraCodigo(simb_rot->rot.rotulo, "ENRT");
+    }
+    DOIS_PONTOS
 ;
 
 comando_sem_rotulo:
     comando_com_ident
     | comando_condicional
     | comando_repetitivo
+    | comando_desvio
+    | comando_composto
+    
+    
 ;
 
+comando_desvio:
+    GOTO NUMERO
+    {
+        tipo_simbolo *simb_rot = TS_busca(token, tabela_simbolos);
+        if ( (!simb_rot) || (simb_rot->base.categoria != CAT_ROT) )
+            erro(ERRO_ROT_NDECL);
+        enfileira_param_string(simb_rot->rot.rotulo);
+        enfileira_param_int(simb_rot->rot.nivel_lexico);
+        enfileira_param_int(nivel_lexico);
+        geraCodigo(NULL, "DSVR");
+    }
+;
 
 comando_com_ident:
     IDENT
@@ -641,11 +675,11 @@ comando_com_ident_cont:
 ;
 
 comando_condicional:
-    IF expressao THEN comeca_if comando_sem_rotulo
+    IF expressao THEN comeca_if comando
     {
         geraCodigo(desempilha(pilha_rotulos_cond), "NADA"); // fim do IF sem else
     }
-    | IF expressao THEN comeca_if comando_sem_rotulo ELSE
+    | IF expressao THEN comeca_if comando ELSE
     {
         if ($2 != TIPO_BOOL)
             erro(ERRO_IFNOTBOOL);
@@ -656,7 +690,7 @@ comando_condicional:
         geraCodigo(NULL, "DSVS"); // pula o ELSE se entrei no IF
         geraCodigo(rot_comeco_else, "NADA"); // comeco do ELSE
     }
-    comando_sem_rotulo
+    comando
     {
         geraCodigo(desempilha(pilha_rotulos_cond), "NADA"); // fim do ELSE
     }
@@ -676,7 +710,7 @@ comando_repetitivo:
         enfileira_param_string(rot_saida);
         geraCodigo(NULL, "DSVF");
     }
-    DO comando_sem_rotulo
+    DO comando
     {
         char *rot_saida = desempilha(pilha_rotulos_repet);
         char *ponto_de_retorno = desempilha(pilha_rotulos_repet);
@@ -1066,10 +1100,10 @@ int main (int argc, char** argv) {
     FILE* fp;
     extern FILE* yyin;
 
-    // if (DEBUG) {
-    //     extern int yydebug;
-    //     yydebug = 1;
-    // }
+    if (DEBUG) {
+        extern int yydebug;
+        yydebug = 1;
+    }
     
     if (argc<2 || argc>2) {
         printf("usage compilador <arq>a %d\n", argc);

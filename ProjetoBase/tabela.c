@@ -113,7 +113,7 @@ simbolo_rot TS_constroi_simbolo_rot(char *identificador, int nivel_lexico, char 
     
     rot.categoria=CAT_ROT;
     
-    strncpy(rot.rotulo, rotulo, TAM_ROT);
+    strncpy(rot.rotulo, rotulo, TAM_ROT+1);
     
     rot.nivel_lexico = nivel_lexico;
     
@@ -176,7 +176,7 @@ char *TS_simbolo2str(void *simbolo_void){
             str_len+=strlen(") / ");
             str_len+=n_digitos(s->proc.nivel_lexico);
             str_len+=strlen(" / ");
-            str_len+=n_digitos(s->proc.rotulo);
+            str_len+=strlen(s->proc.rotulo);
             str_len+=strlen(" / ");
             str_len+=n_digitos(s->proc.n_params);
             str_len+=strlen("{ ");
@@ -214,7 +214,7 @@ char *TS_simbolo2str(void *simbolo_void){
             str_len+=strlen(" / ");
             str_len+=n_digitos(s->func.tipo);
             str_len+=strlen(" / ");
-            str_len+=n_digitos(s->func.rotulo);
+            str_len+=strlen(s->func.rotulo);
             str_len+=strlen(" / ");
             str_len+=n_digitos(s->func.n_params);
             str_len+=strlen("{ ");
@@ -300,6 +300,9 @@ void TS_atualiza_tipos(tipos tipo, categorias cat, pilha ts){
                 erro(ERRO_TINCOMPATIVEL);
             }
             break;
+        default:
+            erro(ERRO_DESCONHECIDO);
+            break;
     }
     conta_tipo = 0;
 }
@@ -313,7 +316,6 @@ tipo_simbolo *TS_busca(char *identificador, pilha ts){
     while ( n ) {
         s = (tipo_simbolo *) conteudo_pilha(n);
         if ( strcmp(identificador, s->base.identificador) == 0 ){
-            char *simb_str_ptr = simb_str;
             simb_str = TS_simbolo2str(s);
             debug_print("Simbolo encontrado: %s.\n", simb_str);
             free (simb_str);
@@ -360,9 +362,36 @@ int TS_remove_vs(int nivel_lexico, pilha ts){
         }
         i++;
     }
-    debug_print("%d simbolos removidos.\n", i);
+    debug_print("%d simbolos removidos.\n", removidos);
     
     return removidos;
+}
+
+int TS_conta_vs(int nivel_lexico, pilha ts){
+    no_pilha n = topo(ts);
+    int contador=0;
+    tipo_simbolo *s;
+    char *s_str;
+    debug_print("Contando VS de nivel lexico %d da tabela de simbolos.\n", nivel_lexico);
+    while (n){
+        s = (tipo_simbolo *) conteudo_pilha(n);
+        if ( (s->base.categoria == CAT_VS) && (s->vs.nivel_lexico==nivel_lexico) ){
+            
+            s_str = TS_simbolo2str(s);
+            debug_print("Simbolo [%s] encontrado.\n",s_str);
+            free (s_str);
+            
+            n = proximo_no_pilha(n);
+            
+            contador++;
+        }
+        else {
+            n = proximo_no_pilha(n);
+        }
+    }
+    debug_print("%d VS encontradas.\n", contador);
+    
+    return contador;
 }
 
 void TS_empilha(tipo_simbolo *s, pilha ts){
@@ -427,7 +456,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                                 TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
-                            
+                            break;
+                        case CAT_ROT:
                             break;
                     }
                     break;
@@ -474,6 +504,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             }
                             
                             break;
+                        case CAT_ROT:
+                            break;
                     }
                     break;
                 case CAT_PROC:
@@ -518,6 +550,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
+                            break;
+                        case CAT_ROT:
                             break;
                     }
                     break;
@@ -564,6 +598,16 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             }
                             
                             break;
+                        case CAT_ROT:
+                            break;
+                    }
+                    break;
+                case CAT_ROT:
+                    nl1 = s->rot.nivel_lexico;
+                    if ((s2->rot.categoria==CAT_ROT) && (s2->rot.nivel_lexico == nl1)){
+                        debug_print("Identificador duplicado=[%s]\n",ident1);
+                        TS_imprime(ts);
+                        erro(ERRO_IDENT_DUPLICADO);
                     }
                     break;
             }
@@ -572,7 +616,6 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
     
      empilha((void *) s, ts);
 }
-
 
 void TS_atualiza_params(int num_params, pilha ts){
     no_pilha n;
@@ -679,28 +722,22 @@ void TS_remove_rtpr(tipo_simbolo *simb_rtpr, pilha ts){
     no_pilha n;
     int removidos=0;
     int i=0;
-    int num_params;
-    int niv_lex;
     tipo_simbolo *s;
     char *s_str;
     categorias cat = simb_rtpr->base.categoria;
     
     if (cat==CAT_PROC) {
         debug_print("Retornando de Proc. %s, nivel lexico %d.\n", simb_rtpr->proc.identificador, simb_rtpr->proc.nivel_lexico);
-        num_params = simb_rtpr->proc.n_params;
-        niv_lex = simb_rtpr->proc.nivel_lexico;
     }
     else {
         debug_print("Retornando de Func. %s, nivel lexico %d.\n", simb_rtpr->func.identificador, simb_rtpr->func.nivel_lexico);
-        num_params = simb_rtpr->func.n_params;
-        niv_lex = simb_rtpr->func.nivel_lexico;
     }
     
     n = topo(ts);
     while (n){
         s = (tipo_simbolo *) conteudo_pilha(n);
         
-        if (( (s->base.categoria == CAT_PF) && (s->vs.nivel_lexico==nivel_lexico) )
+        if (( (s->base.categoria == CAT_PF) && (s->pf.nivel_lexico==nivel_lexico) )
         || ((s->base.categoria == CAT_PROC) && (s->proc.nivel_lexico>nivel_lexico))
         || ((s->base.categoria == CAT_FUNC) && (s->func.nivel_lexico>nivel_lexico)))
         {
@@ -720,35 +757,6 @@ void TS_remove_rtpr(tipo_simbolo *simb_rtpr, pilha ts){
             continue;
         }
         
-/*        if ( (s->base.categoria == CAT_PF) && (s->vs.nivel_lexico==nivel_lexico) ){
-            s_str = TS_simbolo2str(s);
-            debug_print("VS [%s] indice %d sera removida.\n", s_str, i);
-            free (s_str);
-        }
-        else if ( (s->base.categoria == CAT_PROC) && (s->proc.nivel_lexico>nivel_lexico) ){
-            s_str = TS_simbolo2str(s);
-            debug_print("PROC [%s] indice %d sera removido.\n", s_str, i);
-            free (s_str);
-        }
-        else if ( (s->base.categoria == CAT_FUNC) && (s->func.nivel_lexico>nivel_lexico) ){
-            s_str = TS_simbolo2str(s);
-            debug_print("FUNC [%s] indice %d sera removida.\n", s_str, i);
-            free (s_str);
-        }
-        else {
-            n = proximo_no_pilha(n);
-            i++;
-            continue;
-        }
-        n = proximo_no_pilha(n);
-        tipo_simbolo *s_removido = remove_indice_pilha(i,ts);
-        
-        s_str = TS_simbolo2str(s_removido);
-        debug_print("Simbolo [%s] removido da tabela de simbolos.\n",s_str);
-        free (s_str);
-        
-        free (s_removido);
-        removidos++;*/
     }
-    debug_print("%d simbolos removidos.\n", i);
+    debug_print("%d simbolos removidos.\n", removidos);
 }

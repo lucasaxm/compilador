@@ -1,14 +1,23 @@
 program exemplo75 (input, output);
-    var b:integer; a:boolean;
+label 100,200;
+var m,n : integer;
+    procedure p(var k:integer; s:integer);
+    var x,z : integer;
+    begin
+        100: k := 6;
+    	     x := 5;
+    		 goto 200;
+    end;
+    function f():integer;
+    var z:integer;
+    begin
+        if z < 0 then
+        else 
+            f:=f*z+1;
+        goto 100;
+    end;
 begin
-    b:=0;
-    while (b<10) do
-        if (a=true) then
-            while (a) do
-                a:=false
-        else if (b>10) then
-            b:=10
-        else
-            a := b=10;
+     p(m,n);
+	 n:= f;
 end.
-
+    
