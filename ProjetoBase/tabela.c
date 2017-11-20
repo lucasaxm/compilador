@@ -423,7 +423,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if(nl1==nl2) { // VS mesmo nivel
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -433,7 +434,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if(nl1==nl2) { // PF mesmo nivel
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -443,7 +445,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if (nl1+1==nl2) { // PROC 1 nivel maior que VS
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                                 
@@ -453,7 +456,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if ((nl1+1==nl2) || (nl1==nl2)) { // FUNC 1 nivel maior ou igual que VS
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             break;
@@ -469,7 +473,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if(nl1==nl2) { // VS mesmo nivel
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -479,7 +484,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if(nl1==nl2) { // PF mesmo nivel (quer dizer que sao da mesma subrot)
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -489,7 +495,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if (nl1+1==nl2) { // PROC 1 nivel maior que PF
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -499,7 +506,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if ((nl1+1==nl2) || (nl1==nl2)) { // FUNC 1 nivel maior ou igual que PF
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -516,7 +524,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if (nl1-1==nl2) { // PROC 1 nivel maior que VS
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -526,7 +535,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if (nl1-1==nl2) { // PROC 1 nivel maior que PF
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -536,7 +546,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if ((nl1-1==nl2) || (nl1==nl2)) { // PROC 1 nivel maior ou igual que PROC
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -546,7 +557,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if (nl1-1==nl2) { // PROC 1 nivel maior que FUNC
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -563,7 +575,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if ((nl1-1==nl2) || (nl1==nl2)) { // FUNC 1 nivel maior ou igual que VS
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -573,7 +586,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if ((nl1-1==nl2) || (nl1==nl2)) { // FUNC 1 nivel maior ou igual que VS
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -583,7 +597,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if (nl1+1==nl2) { // PROC 1 nivel maior que FUNC
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -593,7 +608,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                             
                             if ((nl1-1==nl2) || (nl1==nl2)) { // FUNC 1 nivel maior ou igual que VS
                                 debug_print("Identificador duplicado=[%s]\n",ident1);
-                                TS_imprime(ts);
+                                if (DEBUG)
+                                    TS_imprime(ts);
                                 erro(ERRO_IDENT_DUPLICADO);
                             }
                             
@@ -606,7 +622,8 @@ void TS_empilha(tipo_simbolo *s, pilha ts){
                     nl1 = s->rot.nivel_lexico;
                     if ((s2->rot.categoria==CAT_ROT) && (s2->rot.nivel_lexico == nl1)){
                         debug_print("Identificador duplicado=[%s]\n",ident1);
-                        TS_imprime(ts);
+                        if (DEBUG)
+                            TS_imprime(ts);
                         erro(ERRO_IDENT_DUPLICADO);
                     }
                     break;
@@ -664,7 +681,8 @@ void TS_atualiza_params(int num_params, pilha ts){
         debug_print("Deslocamento da funcao atualizado para %d.\n", subrot->func.deslocamento);
     }
     debug_print("%d parametros atualizados.\n", i);
-    TS_imprime(ts);
+    if (DEBUG)
+        TS_imprime(ts);
 }
 
 tipo_simbolo *TS_busca_subrotina(pilha ts){
