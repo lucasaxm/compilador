@@ -61,3 +61,6 @@ fila parametros; // fila de parametros usada no geraCodigo
 pilha pilha_decl_subrot;    // pilha de decl de subrotinas, topo=subrotina mais interna
 pilha pilha_cham_subrot;    // pilha de chamadas de subrotinas, topo=ultima subrot chamada
 int flag_var; // flag que indica se expressao eh uma variavel
+
+int n_digitos(int n);
+void erro(erros e);
