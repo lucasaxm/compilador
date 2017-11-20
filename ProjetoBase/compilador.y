@@ -903,7 +903,10 @@ atrib:
         debug_print ("Regra: %s | tipo_ident=[%s] tipo_expressao=[%s]\n","atrib", aux_atrib.tipo->type->identificador, $3->type->identificador);
         debug_print ("Simbolo recipiente: %s\n", aux_atrib_simb_str);
         free (aux_atrib_simb_str);
-        if ( $3 != aux_atrib.tipo ) {
+        if  (( $3 != aux_atrib.tipo ) // os dois nao sao do mesmo tipo
+        &&  (( (aux_atrib.tipo->type->tipo == TIPO_INT) && ($3 != TS_busca("integer", tabela_simbolos)) )       // eh int mas nao ta recebendo int
+        ||  ( (aux_atrib.tipo->type->tipo == TIPO_BOOL) && ($3 != TS_busca("boolean", tabela_simbolos)) )))     // eh boolean mas nao ta recebendo boolean
+        {
             erro(ERRO_ATRIB);
         }
         armazena();
