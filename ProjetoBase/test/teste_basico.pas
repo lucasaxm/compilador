@@ -8,16 +8,15 @@ var m,n : integer;
     	     x := 5;
     		 goto 200;
     end;
-    function f():integer;
-    var z:integer;
+    function f(test:integer):integer;
     begin
-        if z < 0 then
+        if n < 0 then 
         else 
-            f:=f*z+1;
+            f:=f(f*f(n)+1;
         goto 100;
     end;
 begin
      p(m,n);
-	 n:= f;
+	 n:= f(m);
 end.
     

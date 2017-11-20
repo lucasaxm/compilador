@@ -29,6 +29,7 @@
  * ------------------------------------------------------------------- */
 
 extern char token[TAM_TOKEN];
+extern char token_old[TAM_TOKEN];
 extern int nivel_lexico;
 extern int desloc;
 extern int nl;
@@ -38,11 +39,17 @@ typedef struct aux_atrib {
     tipos tipo;
 } taux_atrib;
 
+typedef struct schsubrot {
+    int params_chamados;
+    tipo_simbolo *subrot;
+} tchsubrot;
+
 char token[TAM_TOKEN];
+char token_old[TAM_TOKEN];
 char ident[TAM_TOKEN]; // var aux para armazenar token
 
 int num_vars;   // numero de vars de subrot
-int num_params_subrot; // numero de params na decl/chamada de subrot
+int num_params_decl_subrot; // numero de params na decl/chamada de subrot
 int nivel_lexico;   // nivel lexico atual
 pilha tabela_simbolos;  // tabela de simbolos
 pilha pilha_rotulos_subrot; // pilha de rotulos que desviam da decl. de subrotinas

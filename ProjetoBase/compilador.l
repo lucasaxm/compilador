@@ -36,6 +36,7 @@ comentario "(*".*"*)"
 
 program {
     // Regra 1
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("program ");
     return PROGRAM;
@@ -43,6 +44,7 @@ program {
 
 label {
     // Regra 3
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("label ");
     return LABEL;
@@ -50,6 +52,7 @@ label {
 
 var {
     // Regra 8
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("var  ");
     return VAR;
@@ -57,6 +60,7 @@ var {
 
 procedure {
     // Regra 12
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("procedure  ");
     return PROCEDURE;
@@ -64,6 +68,7 @@ procedure {
 
 function {
     // Regra 13
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("function  ");
     return FUNCTION;
@@ -71,6 +76,7 @@ function {
 
 begin {
     // Regra 16
+          strncpy (token_old, token, TAM_TOKEN);
           strncpy (token, yytext, TAM_TOKEN);
         //   IMPRIME("begin ");
           return T_BEGIN;
@@ -78,6 +84,7 @@ begin {
 
 end {
     // Regra 16
+          strncpy (token_old, token, TAM_TOKEN);
           strncpy (token, yytext, TAM_TOKEN);
         //   IMPRIME("end  ");
           return T_END;
@@ -85,6 +92,7 @@ end {
 
 goto {
     // Regra 21
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("goto  ");
     return GOTO;
@@ -92,6 +100,7 @@ goto {
 
 if {
     // Regra 22
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("if  ");
     return IF;
@@ -99,6 +108,7 @@ if {
 
 then {
     // Regra 22
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("then  ");
     return THEN;
@@ -106,6 +116,7 @@ then {
 
 else {
     // Regra 22
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("else  ");
     return ELSE;
@@ -113,6 +124,7 @@ else {
 
 while {
     // Regra 23
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("while  ");
     return WHILE;
@@ -120,42 +132,49 @@ while {
 
 do {
     // Regra 23
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("do  ");
     return DO;
 }
 
 integer {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("integer  ");
     return INT;
 }
 
 boolean {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME("boolean  ");
     return BOOL;
 }
 
 := {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" atribuicao  ");
     return ATRIBUICAO;  
  }
 
 \; {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" pt_virgula  ");
     return PONTO_E_VIRGULA;
  }
 
 \: {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" dois pontos ");
     return DOIS_PONTOS;
  }
 
 \, {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" virgula  ");
     return VIRGULA;
@@ -163,36 +182,42 @@ boolean {
 
 
 \. {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" ponto  ");
     return PONTO; 
     }
 
 \(  {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" abre_parenteses  ");
     return ABRE_PARENTESES;
     }
 
 \)  {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" fecha_parenteses ");
     return FECHA_PARENTESES;
  }
 
 \* { 
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" * ");
     return MULT;
  }
 
 \+ { 
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" + ");
     return MAIS;
  }
 
 \- { 
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" - ");
     return MENOS;
@@ -200,84 +225,98 @@ boolean {
 
 
 \>  { 
+  strncpy (token_old, token, TAM_TOKEN);
   strncpy (token, yytext, TAM_TOKEN);
 //   IMPRIME(" > ");
   return MAIOR;
 }
 
 \<  { 
+  strncpy (token_old, token, TAM_TOKEN);
   strncpy (token, yytext, TAM_TOKEN);
 //   IMPRIME(" < ");
   return MENOR;
 }
 
 \>=  { 
+  strncpy (token_old, token, TAM_TOKEN);
   strncpy (token, yytext, TAM_TOKEN);
 //   IMPRIME(" >=");
   return MAIOR_IGUAL;
 }
 
 \<=  { 
+  strncpy (token_old, token, TAM_TOKEN);
   strncpy (token, yytext, TAM_TOKEN);
 //   IMPRIME(" <= ");
   return MENOR_IGUAL;
 }
 
 \<> { 
+  strncpy (token_old, token, TAM_TOKEN);
   strncpy (token, yytext, TAM_TOKEN);
 //   IMPRIME(" <> ");
   return DIFERENTE;
 }
 
 \=  { 
+  strncpy (token_old, token, TAM_TOKEN);
   strncpy (token, yytext, TAM_TOKEN);
 //   IMPRIME(" == ");
   return IGUAL;
 }
 
 or {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" or ");
     return OR;
 }
 
 and {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" and ");
     return AND;
 }
 
 NOT {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" NOT ");
     return NOT;
 }
 
 div {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" div ");
     return DIV;
 }
 
 true {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" true ");
     return T_TRUE;
 }
 
 false { 
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" false ");
     return T_FALSE;
 }
 
 {ident} {
+    strncpy (token_old, token, TAM_TOKEN);
     strncpy (token, yytext, TAM_TOKEN);
     // IMPRIME(" ident  ");
     return IDENT;
 }
 
 {numero} {
+  strncpy (token_old, token, TAM_TOKEN);
   strncpy (token, yytext, TAM_TOKEN);
 //   IMPRIME(" numero  ");
   return NUMERO;

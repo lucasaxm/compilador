@@ -107,7 +107,7 @@ void erro(erros e){
             snprintf(msg, msg_size, "Linha %d | Identificador já declarado.", nl);
             break;
         case ERRO_VS_NDECL:
-            snprintf(msg, msg_size, "Linha %d | Variável '%s' não declarada.", nl, token); 
+            snprintf(msg, msg_size, "Linha %d | Variável não declarada.", nl);
             break;
         case ERRO_PROC_NDECL:
             snprintf(msg, msg_size, "Linha %d | Procedimento não declarado.", nl);
@@ -140,6 +140,64 @@ void erro(erros e){
     fprintf(stderr,"\n# %s\n# Abortando.\n\n",msg);
     exit(e);
     return;
+}
+
+void empilha_ch_subrot(tipo_simbolo *subrot) {
+    tchsubrot *chsubrot = malloc(sizeof(tchsubrot));
+    chsubrot->params_chamados = 0;
+    chsubrot->subrot = subrot;
+    empilha(chsubrot, pilha_cham_subrot);
+}
+
+tipo_simbolo *desempilha_ch_subrot() {
+    tchsubrot *chsubrot = desempilha(pilha_cham_subrot);
+    tipo_simbolo *subrot = chsubrot->subrot;
+    if (subrot->base.categoria == CAT_PROC) {
+        if(chsubrot->params_chamados < subrot->proc.n_params)
+            erro(ERRO_NPARAM);
+    }
+    else if (subrot->base.categoria == CAT_FUNC) {
+        if(chsubrot->params_chamados < subrot->func.n_params)
+            erro(ERRO_NPARAM);
+    }
+    free(chsubrot);
+    return subrot;
+}
+
+param *param_atual_ch_subrot() {
+    param *p;
+    tchsubrot *chsubrot = conteudo_pilha(topo(pilha_cham_subrot));
+    if (!chsubrot)
+        return NULL;
+    tipo_simbolo *subrot = chsubrot->subrot;
+    if (subrot->base.categoria == CAT_PROC) {
+        if(chsubrot->params_chamados == subrot->proc.n_params)
+            return NULL;
+        p = busca_indice_pilha(chsubrot->params_chamados, subrot->proc.params);
+    }
+    else if (subrot->base.categoria == CAT_FUNC) {
+        if(chsubrot->params_chamados == subrot->func.n_params)
+            return NULL;
+        p = busca_indice_pilha(chsubrot->params_chamados, subrot->func.params);
+    }
+    return p;
+}
+
+void incr_params_chamados_ch_subrot(){
+    tchsubrot *chsubrot = conteudo_pilha(topo(pilha_cham_subrot));
+    if (!chsubrot)
+        erro(ERRO_DESCONHECIDO);
+    chsubrot->params_chamados++;
+    tipo_simbolo *subrot = chsubrot->subrot;
+    if (((subrot->base.categoria == CAT_PROC) && (chsubrot->params_chamados > subrot->proc.n_params))
+    || ((subrot->base.categoria == CAT_FUNC) && (chsubrot->params_chamados > subrot->func.n_params)))
+    {
+            erro(ERRO_NPARAM);
+    }
+}
+
+int subrot_sendo_chamada(){
+    return tamanho_pilha(pilha_cham_subrot)>0;
 }
 
 void enfileira_param_int(int param_int){
@@ -258,14 +316,8 @@ void carrega(tipo_simbolo *simb){
     free (s_str);
     param *p;
     tipos_passagem pass;
-    if (tamanho_pilha(pilha_cham_subrot)>0){
-        tipo_simbolo *subrot = conteudo_pilha(topo(pilha_cham_subrot));
-        if (!subrot)
-            erro(ERRO_FUNC_NDECL);
-        if (subrot->base.categoria == CAT_PROC)
-            p = busca_indice_pilha(num_params_subrot, subrot->proc.params);
-        else
-            p = busca_indice_pilha(num_params_subrot, subrot->func.params);
+    if (subrot_sendo_chamada()){
+        p = param_atual_ch_subrot();
             
         if (!p) {
             erro(ERRO_NPARAM);
@@ -339,7 +391,7 @@ void carrega(tipo_simbolo *simb){
 %token MULT MAIS MENOS MAIOR MENOR MAIOR_IGUAL MENOR_IGUAL DIFERENTE IGUAL OR AND NOT DIV T_TRUE
 %token T_FALSE DO
 
-%type<tipo> fator termo expressao_simples expressao
+%type<tipo> fator termo expressao_simples expressao fator_com_ident fator_com_ident_cont var ch_func
 
 %define parse.error verbose
 %right THEN ELSE // Same precedence, but "shift" wins.
@@ -418,9 +470,6 @@ novo_label:
     }
 ;
 
-var:
-    IDENT
-;
 
 /* DECLARACAO DE SUBROTINAS */
 
@@ -440,11 +489,11 @@ declara_procedimento:
         empilha(s, pilha_decl_subrot);
         enfileira_param_int(nivel_lexico);
         geraCodigo(s->proc.rotulo, "ENPR");
-        num_params_subrot=0;
+        num_params_decl_subrot=0;
     }
     params_formais PONTO_E_VIRGULA
     {
-        TS_atualiza_params(num_params_subrot, tabela_simbolos);
+        TS_atualiza_params(num_params_decl_subrot, tabela_simbolos);
     }
     bloco
     {
@@ -512,7 +561,7 @@ id_param:
         s->pf = TS_constroi_simbolo_pf(token, nivel_lexico, 0, TIPO_UNKNOWN, aux_passagem); // atualiza deslocamento e tipo depois
         TS_empilha(s, tabela_simbolos);
         conta_tipo++;
-        num_params_subrot++;
+        num_params_decl_subrot++;
     }
 ;
 
@@ -526,11 +575,11 @@ declara_funcao:
         empilha(s, pilha_decl_subrot);
         enfileira_param_int(nivel_lexico);
         geraCodigo(s->func.rotulo, "ENPR");
-        num_params_subrot=0;
+        num_params_decl_subrot=0;
     }
     params_formais DOIS_PONTOS 
     {
-        TS_atualiza_params(num_params_subrot, tabela_simbolos);
+        TS_atualiza_params(num_params_decl_subrot, tabela_simbolos);
         aux_categoria = CAT_FUNC;
     }
     tipo PONTO_E_VIRGULA bloco
@@ -732,20 +781,18 @@ comeca_if:
 
 ch_proc:
     {
-        num_params_subrot=0;
         tipo_simbolo *subrot = TS_busca_procedimento(ident, tabela_simbolos);
         if (!subrot)
             erro(ERRO_PROC_NDECL);
-        empilha(subrot, pilha_cham_subrot);
+        empilha_ch_subrot(subrot);
+        
         char *subrot_srt = TS_simbolo2str(subrot);
         debug_print("Chamando subrotina [%s]\n", subrot_srt);
         free (subrot_srt);
     }
     passa_params
     {
-        tipo_simbolo *subrot = desempilha(pilha_cham_subrot);
-        if(num_params_subrot < subrot->proc.n_params)
-            erro(ERRO_NPARAM);
+        tipo_simbolo *subrot = desempilha_ch_subrot();
         enfileira_param_string(subrot->proc.rotulo);
         enfileira_param_int(nivel_lexico);
         geraCodigo(NULL, "CHPR");
@@ -771,17 +818,14 @@ lista_params:
 param:
     expressao
     {
-        tipo_simbolo *subrot = conteudo_pilha(topo(pilha_cham_subrot));
-        if(num_params_subrot > subrot->proc.n_params)
-            erro(ERRO_NPARAM);
-        param *p = busca_indice_pilha(num_params_subrot, subrot->proc.params);
+        param *p = param_atual_ch_subrot();
         if ( (p->passagem == PASS_REF) && (!flag_var) ) { // se eh pass por ref e encontrou operacao
             erro(ERRO_PARAMREF);
         }
         if ( $1 != p->tipo ) { // se tipo do parametro != tipo da operacao
             erro(ERRO_TPARAM);
         }
-        num_params_subrot++;
+        incr_params_chamados_ch_subrot();
     }
 ;
 
@@ -1034,32 +1078,6 @@ fator:
         flag_var=0;
         debug_print ("Regra: %s | %s\n","fator","NUMERO");
     }
-    | var
-    {
-        s = TS_busca(token, tabela_simbolos);
-        if (s == NULL) {
-            erro(ERRO_VS_NDECL);
-        }
-        switch (s->base.categoria){
-            case CAT_PF:
-                $$ = s->pf.tipo;
-                flag_var=1;
-                break;
-            case CAT_VS:
-                $$ = s->vs.tipo;
-                flag_var=1;
-                break;
-            case CAT_FUNC:
-                $$ = s->func.tipo;
-                flag_var=0;
-                break;
-            default:
-                erro(ERRO_ATRIB);
-                break;
-        }
-        carrega(s);
-        debug_print ("Regra: %s | %s\n","fator","VAR");
-    }
     | NOT fator
     {
         if ($2 == TIPO_BOOL) {
@@ -1088,11 +1106,89 @@ fator:
         flag_var=0;
         debug_print ("Regra: %s | %s\n","fator","T_FALSE");
     }
+    | fator_com_ident
+;
 
+fator_com_ident:
+    IDENT
+    {
+        debug_print("token=[%s] token_old=[%s]\n",token,token_old);
+        strncpy(ident, token, TAM_TOKEN);
+        debug_print("ident=[%s]\n",ident);
+    }
+    fator_com_ident_cont
+    {
+        $$ = $3;
+    }
+;
 
-// regra_label:
-//     NUMERO DOIS_PONTOS
-// ;
+fator_com_ident_cont:
+    var
+    | ch_func
+;
+
+ch_func:
+    ABRE_PARENTESES
+    {
+        tipo_simbolo *subrot = TS_busca_funcao(ident, tabela_simbolos);
+        if (!subrot) {
+            debug_print("Funcao com ident [%s] nao declarada.\n", ident);
+            erro(ERRO_FUNC_NDECL);
+        }
+        empilha_ch_subrot(subrot);
+        
+        char *subrot_srt = TS_simbolo2str(subrot);
+        debug_print("Chamando subrotina [%s]\n", subrot_srt);
+        free (subrot_srt);
+        
+        enfileira_param_int(1);
+        geraCodigo(NULL, "AMEM"); // aloca espaco pra retorno da func
+    }
+    passa_params_func
+    {
+        tipo_simbolo *subrot = desempilha_ch_subrot();
+        enfileira_param_string(subrot->func.rotulo);
+        enfileira_param_int(nivel_lexico);
+        geraCodigo(NULL, "CHPR");
+        $$ = subrot->func.tipo;
+    }
+;
+
+passa_params_func:
+    lista_params FECHA_PARENTESES
+    | FECHA_PARENTESES
+;
+
+var:
+    %empty
+    {
+        s = TS_busca(ident, tabela_simbolos);
+        if (s == NULL) {
+            debug_print("token=[%s] token_old=[%s]\n",token,token_old);
+            debug_print("ident=[%s]\n",ident);
+            erro(ERRO_VS_NDECL);
+        }
+        switch (s->base.categoria){
+            case CAT_PF:
+                $$ = s->pf.tipo;
+                flag_var=1;
+                break;
+            case CAT_VS:
+                $$ = s->vs.tipo;
+                flag_var=1;
+                break;
+            case CAT_FUNC:
+                $$ = s->func.tipo;
+                flag_var=0;
+                break;
+            default:
+                erro(ERRO_ATRIB);
+                break;
+        }
+        carrega(s);
+        debug_print ("Regra: %s | %s\n","fator","VAR");
+    }
+;
 
 %%
 
