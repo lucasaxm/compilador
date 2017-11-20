@@ -4,12 +4,14 @@ var m,n : integer;
     procedure p(var k:integer; s:integer);
     var x,z : integer;
     begin
-        100: k := 6;
-    	     x := 5;
-    		 goto 200;
+        read (m,n,k,s,x,z);
+    100: k := 6;
+	     x := 5;
+		 goto 200;
     end;
     function f(test:integer):integer;
     begin
+        read (n,f);
         if n < 0 then 
         else 
             f:=f(f(n)+1);
