@@ -1,8 +1,8 @@
 program exemplo73 (input, output);
-   type teste = integer;
-   var a:teste;
+   var a:integer;
 begin
-   a:=1
+   for a:=1 to 10 do
+      write(a);
 end.
       
       

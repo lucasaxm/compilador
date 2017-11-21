@@ -145,6 +145,18 @@ do {
     return DO;
 }
 
+for {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("for  ");
+    return FOR;
+}
+
+to {
+    strncpy (token, yytext, TAM_TOKEN);
+    IMPRIME("to  ");
+    return TO;
+}
+
 := {
     strncpy (token, yytext, TAM_TOKEN);
     IMPRIME(" atribuicao  ");
