@@ -57,7 +57,7 @@ simbolo_proc *TS_constroi_simbolo_proc(char *identificador, int nivel_lexico, ch
     
     proc->nivel_lexico = nivel_lexico;
     
-    strncpy(proc->rotulo, rotulo, TAM_ROT);
+    strncpy(proc->rotulo, rotulo, TAM_ROT+1);
     
     if (params){
         proc->n_params = n_params;
@@ -183,6 +183,7 @@ char *TS_params2str(pilha params){
         param_str_len+=strlen("}");
         
         params_str_len+=param_str_len;
+        n = proximo_no_pilha(n);
     }
     
     char param_str[params_str_len+1];
