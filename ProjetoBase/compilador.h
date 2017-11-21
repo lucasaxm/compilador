@@ -56,6 +56,7 @@ pilha tabela_simbolos;  // tabela de simbolos
 pilha pilha_rotulos_subrot; // pilha de rotulos que desviam da decl. de subrotinas
 pilha pilha_rotulos_cond; // pilha de rotulos que sao usados no comando condicional
 pilha pilha_rotulos_repet; // pilha de rotulos que sao usados no comando repetitivo
+pilha pilha_incr_for; // pilha de simbolos que estao sendo usados como incrementos de for
 tipo_simbolo *s;    // simbolo usado em diversos lugares no codigo
 taux_atrib aux_atrib;   // estrutura que auxilia no parsing de atribuicao
 tipos_passagem aux_passagem;    // auxiliar para adicionar tipo de passagem de params
@@ -69,6 +70,7 @@ fila parametros; // fila de parametros usada no geraCodigo
 pilha pilha_decl_subrot;    // pilha de decl de subrotinas, topo=subrotina mais interna
 pilha pilha_cham_subrot;    // pilha de chamadas de subrotinas, topo=ultima subrot chamada
 int flag_var; // flag que indica se expressao eh uma variavel
+int flag_for; // flag que indica se atribuicao faz parte do header do for
 
 int n_digitos(int n);
 void erro(erros e);

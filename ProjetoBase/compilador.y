@@ -404,9 +404,10 @@ programa :
         pilha_rotulos_repet = constroi_pilha();
         pilha_decl_subrot = constroi_pilha();
         pilha_cham_subrot = constroi_pilha();
+        pilha_incr_for = constroi_pilha();
         parametros = constroi_fila();
         geraCodigo (NULL, "INPP");
-        
+        flag_for = 0;
         tipo_simbolo *tipo_primitivo = malloc(sizeof(tipo_simbolo));
         tipo_primitivo->type = TS_constroi_simbolo_type("integer", nivel_lexico, TIPO_INT);
         TS_empilha(tipo_primitivo, tabela_simbolos);
@@ -771,6 +772,69 @@ comando_condicional:
 ;
 
 comando_repetitivo:
+    while
+    | for
+;
+
+for:
+    FOR IDENT
+    {
+        flag_for = 1;
+        strncpy(ident, token, TAM_TOKEN);
+    }
+    atrib
+    {
+        flag_for = 0;
+        char *ponto_de_retorno = prox_rotulo();
+        empilha(ponto_de_retorno, pilha_rotulos_repet);
+        geraCodigo(ponto_de_retorno, "NADA");
+    }
+    TO
+    {
+        taux_atrib *aux_atrib_for = conteudo_pilha(topo(pilha_incr_for));
+        carrega(aux_atrib_for->s);
+    }
+    expressao
+    {
+        taux_atrib *aux_atrib_for = conteudo_pilha(topo(pilha_incr_for));
+        
+        if (!aux_atrib_for)
+            erro(ERRO_DESCONHECIDO);
+        if  (( $8 != aux_atrib_for->tipo ) // os dois nao sao do mesmo tipo
+        &&  ((aux_atrib_for->tipo->type->tipo == TIPO_INT) && ($8 != TS_busca("integer", tabela_simbolos))))       // eh int mas nao ta recebendo int
+        {
+            erro(ERRO_ATRIB);
+        }
+        
+        geraCodigo(NULL, "CMEG");
+        
+        char *rot_saida = prox_rotulo();
+        empilha(rot_saida, pilha_rotulos_repet);
+        enfileira_param_string(rot_saida);
+        geraCodigo(NULL, "DSVF");
+        
+    }
+    DO comando
+    {
+        taux_atrib *aux_atrib_for = desempilha(pilha_incr_for);
+        carrega(aux_atrib_for->s);
+        enfileira_param_int(1);
+        geraCodigo(NULL, "CRCT");
+        geraCodigo(NULL, "SOMA");
+        aux_atrib = *aux_atrib_for;
+        armazena();
+        
+        char *rot_saida = desempilha(pilha_rotulos_repet);
+        char *ponto_de_retorno = desempilha(pilha_rotulos_repet);
+        enfileira_param_string(ponto_de_retorno);
+        geraCodigo(NULL, "DSVS");
+        geraCodigo(rot_saida, "NADA");
+        
+        free(aux_atrib_for);
+    }
+;
+
+while:
     WHILE 
     {
         char *ponto_de_retorno = prox_rotulo();
@@ -910,6 +974,14 @@ atrib:
             erro(ERRO_ATRIB);
         }
         armazena();
+        if (flag_for) {
+            if ((aux_atrib.tipo->type->tipo != TIPO_INT) || ($3->type->tipo != TIPO_INT))
+                erro(ERRO_ATRIB);
+            taux_atrib *aux_atrib_copy = malloc(sizeof(taux_atrib));
+            aux_atrib_copy->s = aux_atrib.s;
+            aux_atrib_copy->tipo = aux_atrib.tipo;
+            empilha(aux_atrib_copy, pilha_incr_for);
+        }
         debug_print("end atribuicao. token=[%s]\n", token);
     }
 ;
@@ -925,7 +997,7 @@ expressao:
     | expressao_simples IGUAL expressao_simples
     {
         debug_print ("Regra: %s | %s | tipo_expsimp1=[%s] tipo_expsimp2=[%s]\n","expressao","IGUAL", $1->type->identificador, $3->type->identificador);
-        if ($1 == $3){
+        if ($1->type->tipo == $3->type->tipo){
             $$ = TS_busca("boolean", tabela_simbolos);
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -936,7 +1008,7 @@ expressao:
     | expressao_simples DIFERENTE expressao_simples
     {
         debug_print ("Regra: %s | %s | tipo_expsimp1=[%s] tipo_expsimp2=[%s]\n","expressao","DIFERENTE", $1->type->identificador, $3->type->identificador);
-        if ($1 == $3){
+        if ($1->type->tipo == $3->type->tipo){
             $$ = TS_busca("boolean", tabela_simbolos);
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -947,7 +1019,7 @@ expressao:
     | expressao_simples MENOR expressao_simples
     {
         debug_print ("Regra: %s | %s | tipo_expsimp1=[%s] tipo_expsimp2=[%s]\n","expressao","MENOR", $1->type->identificador, $3->type->identificador);
-        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
+        if ( ($1->type->tipo == $3->type->tipo) && ($1->type->tipo == TIPO_INT) ){
             $$ = TS_busca("boolean", tabela_simbolos);
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -958,7 +1030,7 @@ expressao:
     | expressao_simples MENOR_IGUAL expressao_simples
     {
         debug_print ("Regra: %s | %s | tipo_expsimp1=[%s] tipo_expsimp2=[%s]\n","expressao","MENOR_IGUAL", $1->type->identificador, $3->type->identificador);
-        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
+        if ( ($1->type->tipo == $3->type->tipo) && ($1->type->tipo == TIPO_INT) ){
             $$ = TS_busca("boolean", tabela_simbolos);
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -969,7 +1041,7 @@ expressao:
     | expressao_simples MAIOR_IGUAL expressao_simples
     {
         debug_print ("Regra: %s | %s | tipo_expsimp1=[%s] tipo_expsimp2=[%s]\n","expressao","MAIOR_IGUAL", $1->type->identificador, $3->type->identificador);
-        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
+        if ( ($1->type->tipo == $3->type->tipo) && ($1->type->tipo == TIPO_INT) ){
             $$ = TS_busca("boolean", tabela_simbolos);
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -980,7 +1052,7 @@ expressao:
     | expressao_simples MAIOR expressao_simples
     {
         debug_print ("Regra: %s | %s | tipo_expsimp1=[%s] tipo_expsimp2=[%s]\n","expressao","MAIOR", $1->type->identificador, $3->type->identificador);
-        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
+        if ( ($1->type->tipo == $3->type->tipo) && ($1->type->tipo == TIPO_INT) ){
             $$ = TS_busca("boolean", tabela_simbolos);
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1019,7 +1091,7 @@ expressao_simples:
     | expressao_simples MAIS termo
     {
         debug_print ("Regra: %s | %s | tipo_expsimp=[%s] tipo_termo=[%s]\n","expressao_simples","SOMA", $1->type->identificador, $3->type->identificador);
-        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
+        if ( ($1->type->tipo == $3->type->tipo) && ($1->type->tipo == TIPO_INT) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1030,7 +1102,7 @@ expressao_simples:
     | expressao_simples MENOS termo
     {
         debug_print ("Regra: %s | %s | tipo_expsimp=[%s] tipo_termo=[%s]\n","expressao_simples","SUBT", $1->type->identificador, $3->type->identificador);
-        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
+        if ( ($1->type->tipo == $3->type->tipo) && ($1->type->tipo == TIPO_INT) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1041,7 +1113,7 @@ expressao_simples:
     | expressao_simples OR termo
     {
         debug_print ("Regra: %s | %s | tipo_expsimp=[%s] tipo_termo=[%s]\n","expressao_simples","OR", $1->type->identificador, $3->type->identificador);
-        if ( ($1 == $3) && ($1->type->tipo == TIPO_BOOL) ){
+        if ( ($1->type->tipo == $3->type->tipo) && ($1->type->tipo == TIPO_BOOL) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1060,7 +1132,7 @@ termo:
     | termo MULT fator 
     {
         debug_print ("Regra: %s | %s | tipo_termo=[%s] tipo_fator=[%s]\n","termo","MULT", $1->type->identificador, $3->type->identificador);
-        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
+        if ( ($1->type->tipo == $3->type->tipo) && ($1->type->tipo == TIPO_INT) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1071,7 +1143,7 @@ termo:
     | termo DIV fator 
     {
         debug_print ("Regra: %s | %s | tipo_termo=[%s] tipo_fator=[%s]\n","termo","DIV", $1->type->identificador, $3->type->identificador);
-        if ( ($1 == $3) && ($1->type->tipo == TIPO_INT) ){
+        if ( ($1->type->tipo == $3->type->tipo) && ($1->type->tipo == TIPO_INT) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
@@ -1082,7 +1154,7 @@ termo:
     | termo AND fator 
     {
         debug_print ("Regra: %s | %s | tipo_termo=[%s] tipo_fator=[%s]\n","termo","AND", $1->type->identificador, $3->type->identificador);
-        if ( ($1 == $3) && ($1->type->tipo == TIPO_BOOL) ){
+        if ( ($1->type->tipo == $3->type->tipo) && ($1->type->tipo == TIPO_BOOL) ){
             $$ = $1;
         } else {
             erro(ERRO_TINCOMPATIVEL);
